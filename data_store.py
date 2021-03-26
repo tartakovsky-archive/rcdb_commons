@@ -5,7 +5,6 @@ from typing import Optional
 import requests
 import pandas as pd
 
-
 logger = logging.getLogger("rcdb_datastore")
 
 

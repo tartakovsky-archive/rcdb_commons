@@ -140,3 +140,8 @@ def test_wrong_config_type():
         AdminConfigInput(**data)
 
     assert 'string does not match regex' in str(exc)
+
+
+@pytest.mark.parametrize('config_type', ['OwnLongBotConfig', 'OwnShortBotConfig'])
+def test_default_config(config_type):
+    assert AdminConfigInput(**{'config_type': config_type}).data == BOT_CONFIG_CLASS_MAP[config_type]()

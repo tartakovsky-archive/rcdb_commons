@@ -173,12 +173,18 @@ BOT_CONFIG_CLASS_MAP = {
 
 class AdminConfigInput(pydantic.BaseModel):
     config_type: pydantic.constr(regex=f'^({"|".join(BOT_CONFIG_CLASS_MAP)})$')  # noqa
-    data: typing.Union[OwnLongBotConfig, OwnLongBotConfig]
+    data: typing.Optional[typing.Union[OwnLongBotConfig, OwnLongBotConfig]]
 
     @pydantic.root_validator
     def check_config_type_data(cls, values):
-        if type(values.get('data')).__name__ != values.get('config_type'):
+        if values.get('data') is not None and type(values.get('data')).__name__ != values.get('config_type'):
             raise ValueError('config_type and type of data are mismatched')
+        return values
+
+    @pydantic.root_validator
+    def transform_empty_data(cls, values):
+        if not values.get('data'):
+            values['data'] = BOT_CONFIG_CLASS_MAP[values['config_type']]()
         return values
 
     class Config:

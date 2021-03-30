@@ -5,7 +5,8 @@ import pytest
 import pydantic
 
 from schemas.bot import BOT_CONFIG_CLASS_MAP, Exchange, ExchangeCredentials, \
-    BotConfigResponse, Instrument, Symbol, DatastoreConfig, AdminConfigInput
+    BotConfigResponse, Instrument, Symbol, DatastoreConfig, AdminConfigInput, \
+    OwnShortBotConfig, OwnLongBotConfig
 
 
 BOT_CONFIG_JSON = json.load(resources.open_text('tests.datasets', 'valid_config.json'))
@@ -142,6 +143,14 @@ def test_wrong_config_type():
     assert 'string does not match regex' in str(exc)
 
 
-@pytest.mark.parametrize('config_type', ['OwnLongBotConfig', 'OwnShortBotConfig'])
-def test_default_config(config_type):
-    assert AdminConfigInput(**{'config_type': config_type}).data == BOT_CONFIG_CLASS_MAP[config_type]()
+@pytest.mark.parametrize(
+    'config_data',
+    [
+        ('OwnLongBotConfig', OwnLongBotConfig),
+        ('OwnShortBotConfig', OwnShortBotConfig)
+    ]
+)
+def test_default_config(config_data):
+    config_type, config_class = config_data
+    assert BOT_CONFIG_CLASS_MAP[config_type] == config_class
+    assert AdminConfigInput(**{'config_type': config_type}).data == config_class()

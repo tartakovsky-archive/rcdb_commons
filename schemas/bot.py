@@ -167,13 +167,13 @@ class BotConfigResponse(BotBaseConfig):
 
 BOT_CONFIG_CLASS_MAP = {
     "OwnLongBotConfig": OwnLongBotConfig,
-    "OwnShortBotConfig": OwnLongBotConfig,
+    "OwnShortBotConfig": OwnShortBotConfig,
 }
 
 
 class AdminConfigInput(pydantic.BaseModel):
     config_type: pydantic.constr(regex=f'^({"|".join(BOT_CONFIG_CLASS_MAP)})$')  # noqa
-    data: typing.Optional[typing.Union[OwnLongBotConfig, OwnLongBotConfig]]
+    data: typing.Optional[typing.Union[OwnLongBotConfig, OwnShortBotConfig]]
 
     @pydantic.root_validator
     def check_config_type_data(cls, values):

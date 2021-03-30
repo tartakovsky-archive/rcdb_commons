@@ -169,3 +169,77 @@ BOT_CONFIG_CLASS_MAP = {
     "OwnLongBotConfig": OwnLongBotConfig,
     "OwnShortBotConfig": OwnLongBotConfig,
 }
+
+
+class AdminConfigInput(pydantic.BaseModel):
+    config_type: pydantic.constr(regex=f'^({"|".join(BOT_CONFIG_CLASS_MAP)})$')  # noqa
+    data: typing.Union[OwnLongBotConfig, OwnLongBotConfig]
+
+    @pydantic.root_validator
+    def check_config_type_data(cls, values):
+        if type(values.get('data')).__name__ != values.get('config_type'):
+            raise ValueError('config_type and type of data are mismatched')
+        return values
+
+    class Config:
+        example = {
+            "config_type": "OwnLongBotConfig",
+            "data": {
+                'debug': False,
+                'frequency_seconds': 2,
+                'is_margin': False,
+                'borrowing': {
+                    'is_base_borrow_enabled': False,
+                    'base_amount_max': 0.0,
+                    'base_borrow_level_pct': 0.0,
+                    'base_repay_level_pct': 0.0,
+                    'is_quote_borrow_enabled': False,
+                    'quote_amount_max': 0.0,
+                    'quote_borrow_level_pct': 0.0,
+                    'quote_repay_level_pct': 0.0,
+                    'margin_level_max': 1.5
+                },
+                'own_capital': {
+                    'entry_start': 0.0,
+                    'entry_end': 0.0,
+                    'entry_levels': 0,
+                    'exit_start': 0.0,
+                    'exit_end': 0.0,
+                    'exit_levels': 0,
+                    'is_std_channels_enabled': False,
+                    'std_channels_mult_min': None,
+                    'std_channels_mult_max': None
+                },
+                'base_capital': {
+                    'entry_start': 0.0,
+                    'entry_end': 0.0,
+                    'entry_levels': 0,
+                    'exit_start': 0.0,
+                    'exit_end': 0.0,
+                    'exit_levels': 0,
+                    'is_std_channels_enabled': False,
+                    'std_channels_mult_min': None,
+                    'std_channels_mult_max': None
+                },
+                'quote_capital': {
+                    'entry_start': 0.0,
+                    'entry_end': 0.0,
+                    'entry_levels': 0,
+                    'exit_start': 0.0,
+                    'exit_end': 0.0,
+                    'exit_levels': 0,
+                    'is_std_channels_enabled': False,
+                    'std_channels_mult_min': None,
+                    'std_channels_mult_max': None
+                },
+                'piranha': {
+                    'order_limit': None,
+                    'wall_distance': None
+                },
+                'order_config': {
+                    'min_fill_to_replace_pct': 0.9,
+                    'price_merge_step_pct': 0.0005,
+                    'price_tolerance_pct': 0.0001
+                }
+            }
+        }

@@ -183,7 +183,7 @@ class AdminConfigInput(pydantic.BaseModel):
 
     @pydantic.root_validator
     def transform_empty_data(cls, values):
-        if not values.get('data'):
+        if not values.get('data') and values.get('config_type'):
             values['data'] = BOT_CONFIG_CLASS_MAP[values['config_type']]()
         return values
 

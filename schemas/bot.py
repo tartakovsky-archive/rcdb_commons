@@ -1,5 +1,6 @@
 import enum
 import typing
+import typing_extensions
 
 import pydantic
 
@@ -138,12 +139,16 @@ class BotDefaultConfig(pydantic.BaseModel):
 
 
 class OwnLongBotConfig(BotDefaultConfig):
+    config_type: typing_extensions.Literal['OwnLongBotConfig'] = 'OwnLongBotConfig'
+
     quote_own: LongOrderGridConfig = pydantic.Field(default_factory=LongOrderGridConfig)
     base_brw: ShortOrderGridConfig = pydantic.Field(default_factory=ShortOrderGridConfig)
     quote_brw: LongOrderGridConfig = pydantic.Field(default_factory=LongOrderGridConfig)
 
 
 class OwnShortBotConfig(BotDefaultConfig):
+    config_type: typing_extensions.Literal['OwnShortBotConfig'] = 'OwnShortBotConfig'
+
     base_own: ShortOrderGridConfig = pydantic.Field(default_factory=LongOrderGridConfig)
     base_brw: ShortOrderGridConfig = pydantic.Field(default_factory=ShortOrderGridConfig)
     quote_brw: LongOrderGridConfig = pydantic.Field(default_factory=LongOrderGridConfig)
@@ -156,10 +161,7 @@ class OwnShortBotConfig(BotDefaultConfig):
 
 class BotConfigResponse(BotBaseConfig):
     bot_id: int
-    bot_config: typing.Union[
-        OwnLongBotConfig,
-        OwnShortBotConfig
-    ]
+    bot_config: typing.Union[OwnLongBotConfig, OwnShortBotConfig] = pydantic.Field(descriminator='config_type')
     exchange_credentials: ExchangeCredentials
     instrument: Instrument
     datastore: DatastoreConfig
@@ -173,7 +175,9 @@ BOT_CONFIG_CLASS_MAP = {
 
 class AdminConfigInput(pydantic.BaseModel):
     config_type: pydantic.constr(regex=f'^({"|".join(BOT_CONFIG_CLASS_MAP)})$')  # noqa
-    data: typing.Optional[typing.Union[OwnLongBotConfig, OwnShortBotConfig]]
+    data: typing.Optional[
+        typing.Union[OwnLongBotConfig, OwnShortBotConfig]
+    ] = pydantic.Field(descriminator='config_type')
 
     @pydantic.root_validator
     def check_config_type_data(cls, values):

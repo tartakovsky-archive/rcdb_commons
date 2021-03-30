@@ -154,3 +154,15 @@ def test_default_config(config_data):
     config_type, config_class = config_data
     assert BOT_CONFIG_CLASS_MAP[config_type] == config_class
     assert AdminConfigInput(**{'config_type': config_type}).data == config_class()
+
+
+@pytest.mark.parametrize(
+    'config_data',
+    [
+        ('OwnLongBotConfig', OwnLongBotConfig),
+        ('OwnShortBotConfig', OwnShortBotConfig)
+    ]
+)
+def test_config_union(config_data):
+    config_type, config_class = config_data
+    assert AdminConfigInput(**{'config_type': config_type, 'data': config_class().dict()}).data == config_class()

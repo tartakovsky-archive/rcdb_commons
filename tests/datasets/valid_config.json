@@ -15,6 +15,7 @@
     },
     "bot_id": 1,
     "bot_config": {
+        "config_type": "OwnLongBotConfig",
         "piranha": {
             "order_limit": null,
             "wall_distance": null

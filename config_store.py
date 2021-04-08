@@ -1,6 +1,4 @@
 import logging
-from enum import Enum
-from typing import Optional
 
 from rcdb_commons.schemas.bot import BotConfigResponse
 import requests
@@ -18,7 +16,8 @@ class ConfigStore:
         self.api_url = api_url
         self.session = requests.Session()
         self.session.headers.update({'Authorization': f'Bearer {token}'})
-        # self.session.headers.update({'X-CSRFToken': f'1dzy45EaC1LjJp7T67TnOYTCEotlO9aRge1z0Knn31b1ps19RKLFh3CtZHnOrAqd'})
+        # self.session.headers.update(
+        # {'X-CSRFToken': f'1dzy45EaC1LjJp7T67TnOYTCEotlO9aRge1z0Knn31b1ps19RKLFh3CtZHnOrAqd'})
 
     def get_config(self, bot_id: int) -> BotConfigResponse:
         r = self.session.get(

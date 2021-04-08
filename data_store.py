@@ -17,6 +17,7 @@ class DataType(Enum):
     kalman = 'kalman'
     bot_performance = 'bot_performance'
     price_index = 'price_index'
+    account_trades = 'account_trades'
 
 
 class DataStore:
@@ -36,6 +37,8 @@ class DataStore:
             return DataType.kalman
         if "balance_base" in cols:
             return DataType.bot_performance
+        if "trades_count_buy" in cols:
+            return DataType.account_trades
 
         return None
 

@@ -24,6 +24,7 @@ def test_init():
         (pd.DataFrame([{'high': 1}]), DataType.ohlcv),
         (pd.DataFrame([{'s1_x': 1}]), DataType.kalman),
         (pd.DataFrame([{'balance_base': 1}]), DataType.bot_performance),
+        (pd.DataFrame([{'trades_count_buy': 1}]), DataType.account_trades),
         (pd.DataFrame([{'some': 1}]), None),
     ]
 )

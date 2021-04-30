@@ -273,6 +273,10 @@ class Order(BaseModel):
     price: Decimal  # order price
     amount: Decimal  # order quantity
     amount_filled: Decimal = Decimal('0.00000000')
+    amount_filled_latest: Decimal = Decimal('0.00000000')
+
+    def get_filled_pct(self) -> Decimal:
+        return self.amount_filled_latest / self.amount_filled
 
     @staticmethod
     def to_precision(value: Decimal, precision: int) -> Decimal:

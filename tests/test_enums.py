@@ -1,6 +1,6 @@
 import pytest
 
-from enums import AccountType
+from schemas.strategy_configs import AccountType
 
 
 @pytest.mark.parametrize(

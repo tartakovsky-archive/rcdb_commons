@@ -4,7 +4,7 @@ from typing import Union
 
 from onepasswordconnectsdk.client import ItemVault, Client, new_client
 
-from schemas.strategy_configs import ExchangeCredentials, ExchangeCredentialsEmpty
+from ..schemas.strategy_configs import ExchangeCredentials, ExchangeCredentialsEmpty
 
 logger = logging.getLogger("rcdb_credentials_store")
 

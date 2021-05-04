@@ -4,7 +4,7 @@ from importlib import resources
 import pytest
 import pydantic
 
-from schemas.strategy_configs import STRATEGY_CONFIG_CLASS_MAP, BotConfigResponse, DatastoreConfig, \
+from lib.schemas.strategy_configs import STRATEGY_CONFIG_CLASS_MAP, BotConfigResponse, DatastoreConfig, \
     AdminConfigInput, OwnShortBotConfig, OwnLongBotConfig, PureMarketMakingConfig
 
 

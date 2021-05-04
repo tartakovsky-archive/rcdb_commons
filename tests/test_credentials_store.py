@@ -5,8 +5,8 @@ from unittest.mock import MagicMock
 import pytest
 from onepasswordconnectsdk.models import Vault, SummaryItem, Item
 
-from credentials_store import CredentialsStore
-from schemas.strategy_configs import ExchangeCredentialsEmpty, ExchangeCredentials, Exchange, AccountType
+from lib.stores import CredentialsStore
+from lib.schemas.strategy_configs import ExchangeCredentialsEmpty, ExchangeCredentials, Exchange, AccountType
 
 HOST = 'host'
 TOKEN = 'token'
@@ -25,7 +25,7 @@ def credentials_store(mocker):
         def get_vaults(self):
             return [VAULT]
 
-    mocked_new_client = mocker.patch('credentials_store.new_client', VaultsMixin())
+    mocked_new_client = mocker.patch('lib.stores.credentials_store.new_client', VaultsMixin())
     store = CredentialsStore(HOST, TOKEN, VAULT_NAME)
     store.client.get_item_by_title.return_value = SummaryItem(id=SUMMARY_ITEM_ID)
     store.client.get_item.return_value = Item(id='asdsa', fields=[{'id': 'notesPlain', 'value': SECRET}])

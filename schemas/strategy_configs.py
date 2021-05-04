@@ -8,13 +8,16 @@ from .exchange import Exchange, AccountType, Symbol, SymbolEmpty
 
 class ExchangeCredentials(BaseModel):
     exchange: Exchange
-    credentials: dict
+    credentials: Union[dict, str]
     type: AccountType
 
+    def is_filled(self) -> bool:
+        return isinstance(self.credentials, dict)
 
-class ExchangeCredentialsEmpty(BaseModel):
+
+class ExchangeCredentialsEmpty(ExchangeCredentials):
     exchange: Literal['EMPTY'] = 'EMPTY'
-    credentials: dict = {}
+    credentials: Union[dict, str] = 'EMPTY'
     type: Literal['EMPTY'] = 'EMPTY'
 
 

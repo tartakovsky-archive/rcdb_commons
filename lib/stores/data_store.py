@@ -1,11 +1,14 @@
 import logging
 from enum import Enum
 from typing import Optional
+from urllib3.util.retry import Retry
 
 import requests
 import pandas as pd
+from requests.adapters import HTTPAdapter
 
 logger = logging.getLogger("rcdb_datastore")
+retries = Retry(total=5, backoff_factor=0.2, status_forcelist=[502, 503, 504], raise_on_status=False)
 
 
 class DataException(Exception):
@@ -26,6 +29,7 @@ class DataStore:
     def __init__(self, api_url, token):
         self.api_url = api_url
         self.session = requests.Session()
+        self.session.mount('http://', HTTPAdapter(max_retries=retries))
         self.session.headers.update({'Authorization': f'Bearer {token}'})
 
     @staticmethod

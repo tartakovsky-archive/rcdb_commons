@@ -5,7 +5,7 @@ import pytest
 import requests
 import pandas as pd
 
-from data_store import DataStore, DataType, DataException
+from lib.stores import DataStore, DataType, DataException
 
 
 API_URL = 'http://some.url'

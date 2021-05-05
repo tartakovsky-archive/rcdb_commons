@@ -1,6 +1,6 @@
 import pytest
 
-from schemas.strategy_configs import AccountType
+from lib.schemas.exchange import AccountType
 
 
 @pytest.mark.parametrize(

@@ -1,7 +1,7 @@
 import logging
 import requests
 
-from schemas.strategy_configs import BotConfigResponse
+from ..schemas.strategy_configs import BotConfigResponse
 
 logger = logging.getLogger("rcdb_config_store")
 

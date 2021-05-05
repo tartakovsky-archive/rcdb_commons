@@ -101,6 +101,7 @@ class PiranhaConfig(BaseModel):
 ##########################################
 # Schema mixins
 ##########################################
+
 class EmptyExchangeCredentialsMixin(BaseModel):
     exchange_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
 
@@ -172,6 +173,11 @@ class PureMarketMakingConfig(EmptySymbolExchangeCredentialsMixin):
     ask_levels: int = 1
 
 
+class PureMarketMakingKalmanOrdersConfig(PureMarketMakingConfig, EmptySymbolExchangeCredentialsMixin):
+    config_type: Literal['PureMarketMakingKalmanOrdersConfig'] = 'PureMarketMakingKalmanOrdersConfig'
+    kalman_datastore_label: str
+
+
 class ExposureFnConfig(BaseModel):
     start: Decimal = Decimal("0.0")
     end: Decimal = Decimal("-0.005")
@@ -206,11 +212,8 @@ class BotConfigResponse(BaseModel):
     bot_id: int
     debug: bool = False
     strategy_config: Union[
-        PureAMMConfig,
         PureMarketMakingConfig,
-        KalmanStepGainConfig,
-        OwnLongBotConfig,
-        OwnShortBotConfig
+        PureMarketMakingKalmanOrdersConfig,
     ] = Field(descriminator='config_type')
     datastore: DatastoreConfig
 
@@ -218,7 +221,8 @@ class BotConfigResponse(BaseModel):
 STRATEGY_CONFIG_CLASS_MAP = {
     "OwnLongBotConfig": OwnLongBotConfig,
     "OwnShortBotConfig": OwnShortBotConfig,
-    "PureMarketMakingConfig": PureMarketMakingConfig
+    "PureMarketMakingConfig": PureMarketMakingConfig,
+    "PureMarketMakingKalmanOrdersConfig": PureMarketMakingKalmanOrdersConfig
 }
 
 

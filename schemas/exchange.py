@@ -75,7 +75,7 @@ class Instrument(BaseModel):
     amount_precision: int
     price_precision: int
     order_amount_max: Decimal
-    order_amount_min: Decimal
+    order_cost_min: Decimal
 
     @property
     def is_spot(self):
@@ -201,7 +201,16 @@ class AccountBalance(BaseModel):
     balances: Dict[str, Union[AssetMarginBalance, AssetSpotBalance]]  # {"USDT": AssetXXXBalance}
 
     def __getitem__(self, key):
-        return self.balances[key]
+        try:
+            return self.balances[key]
+        except KeyError:
+            if self.type == AccountType.SPOT:
+                return AssetSpotBalance(
+                    name=key, free=Decimal("0.0"), locked=Decimal("0.0"), total=Decimal("0.0"))
+            elif self.type == AccountType.CROSS_MARGIN:
+                return AssetMarginBalance(
+                    name=key, free=Decimal("0.0"), locked=Decimal("0.0"), total=Decimal("0.0"),
+                    borrowed=Decimal("0.0"), interest=Decimal("0.0"), net=Decimal("0.0"))
 
     def __iter__(self):
         for item in self.balances.items():

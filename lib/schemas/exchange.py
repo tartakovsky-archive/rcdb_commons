@@ -5,16 +5,19 @@ from decimal import Decimal
 from pydantic import BaseModel
 from pydantic.typing import Literal, List, Tuple, Dict, Union
 
+from helpers.rounding import to_precision
+
 
 class Exchange(Enum):
+    empty = "EMPTY"
     binance = "binance"
     kraken = "kraken"
     okex = "okex"
 
 
-class SymbolEmpty(BaseModel):
-    base: Literal['EMPTY'] = 'EMPTY'
-    quote: Literal['EMPTY'] = 'EMPTY'
+# class SymbolEmpty(BaseModel):
+#     base: Literal['EMPTY'] = 'EMPTY'
+#     quote: Literal['EMPTY'] = 'EMPTY'
 
 
 class Symbol(BaseModel):
@@ -36,6 +39,9 @@ class Symbol(BaseModel):
 
     def to_binance(self):
         return f"{self.base}{self.quote}"
+
+
+SYMBOL_EMPTY = Symbol(base="EMPTY", quote="EMPTY")
 
 
 class AccountType(Enum):
@@ -288,14 +294,17 @@ class Order(BaseModel):
         return self.amount_filled_latest / self.amount_filled
 
     @staticmethod
-    def to_precision(value: Decimal, precision: int) -> Decimal:
-        v = value.quantize(Decimal("1." + "0" * precision), rounding=decimal.ROUND_DOWN)
-        return v
+    def to_precision(value: Decimal, precision: int, round_down=True) -> Decimal:
+        return to_precision(value, precision, round_down)
+
 
     @property
     def price_to_precision(self) -> Decimal:
-        return self.to_precision(self.price, self.instrument.price_precision)
+        if self.side == OrderSide.BUY:
+            return self.to_precision(self.price, self.instrument.price_precision, round_down=True)
+        else:
+            return self.to_precision(self.price, self.instrument.price_precision, round_down=False)
 
     @property
     def amount_to_precision(self) -> Decimal:
-        return self.to_precision(self.amount, self.instrument.amount_precision)
+        return self.to_precision(self.amount, self.instrument.amount_precision, round_down=True)

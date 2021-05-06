@@ -3,7 +3,7 @@ from decimal import Decimal
 from pydantic import BaseModel, Field, constr, root_validator
 from pydantic.typing import Optional, Literal, Union
 
-from .exchange import Exchange, AccountType, Symbol, SymbolEmpty
+from .exchange import Exchange, AccountType, Symbol, SYMBOL_EMPTY
 
 
 class ExchangeCredentials(BaseModel):
@@ -13,6 +13,9 @@ class ExchangeCredentials(BaseModel):
 
     def is_filled(self) -> bool:
         return isinstance(self.credentials, dict)
+
+
+# EXCHANGE_CREDENTIALS_EMPTY = ExchangeCredentials(exchange="EMPTY", credentials={}, type="EMPTY")
 
 
 class ExchangeCredentialsEmpty(ExchangeCredentials):
@@ -105,16 +108,16 @@ class PiranhaConfig(BaseModel):
 # Schema mixins
 ##########################################
 
-class EmptyExchangeCredentialsMixin(BaseModel):
-    exchange_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
-
-
-class EmptySymbolMixin(BaseModel):
-    symbol: Union[SymbolEmpty, Symbol] = SymbolEmpty()
-
-
-class EmptySymbolExchangeCredentialsMixin(EmptySymbolMixin, EmptyExchangeCredentialsMixin):
-    pass
+# class EmptyExchangeCredentialsMixin(BaseModel):
+#     exchange_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
+#
+#
+# class EmptySymbolMixin(BaseModel):
+#     symbol: Union[SymbolEmpty, Symbol] = SymbolEmpty()
+#
+#
+# class EmptySymbolExchangeCredentialsMixin(EmptySymbolMixin, EmptyExchangeCredentialsMixin):
+#     pass
 
 
 ##########################################
@@ -133,7 +136,7 @@ class EmptySymbolExchangeCredentialsMixin(EmptySymbolMixin, EmptyExchangeCredent
 ##########################################
 
 
-class BotDefaultConfig(EmptySymbolExchangeCredentialsMixin):
+class BotDefaultConfig(BaseModel):
     piranha: PiranhaConfig = Field(default_factory=PiranhaConfig)
     order_config: OrderConfig = Field(default_factory=OrderConfig)
 
@@ -158,8 +161,10 @@ class OwnShortBotConfig(BotDefaultConfig):
 # MarketMaking
 ##########################################
 
-class PureMarketMakingConfig(EmptySymbolExchangeCredentialsMixin):
+class PureMarketMakingConfig(BaseModel):
     config_type: Literal['PureMarketMakingConfig'] = 'PureMarketMakingConfig'
+    exchange_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
+    symbol: Symbol = SYMBOL_EMPTY
 
     bid_spread: Decimal = Decimal("0.0")
     ask_spread: Decimal = Decimal("0.0")
@@ -170,13 +175,14 @@ class PureMarketMakingConfig(EmptySymbolExchangeCredentialsMixin):
     price_change_tolerance: Decimal = Decimal("0.0")
 
     order_amount_max: Decimal = Decimal("0.0")
+    order_amount_divider = Decimal("10.0")
     order_amount_min: Decimal = Decimal("0.0")
 
     bid_levels: int = 1
     ask_levels: int = 1
 
 
-class PureMarketMakingKalmanOrdersConfig(PureMarketMakingConfig, EmptySymbolExchangeCredentialsMixin):
+class PureMarketMakingKalmanOrdersConfig(PureMarketMakingConfig):
     config_type: Literal['PureMarketMakingKalmanOrdersConfig'] = 'PureMarketMakingKalmanOrdersConfig'
     kalman_datastore_label: str
 
@@ -189,8 +195,10 @@ class ExposureFnConfig(BaseModel):
     direction: str = 'long'
 
 
-class KalmanStepGainConfig(EmptySymbolExchangeCredentialsMixin):
+class KalmanStepGainConfig(BaseModel):
     config_type: Literal['KalmanStepGainConfig'] = 'KalmanStepGainConfig'
+    exchange_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
+    symbol: Symbol = SYMBOL_EMPTY
     kalman_datastore_label: str
 
     long_exposure: ExposureFnConfig
@@ -201,7 +209,15 @@ class KalmanStepGainConfig(EmptySymbolExchangeCredentialsMixin):
     order_amount_min: Decimal
 
 
-class PureAMMConfig(EmptySymbolExchangeCredentialsMixin):
+class MeanReversionMarketMakingConfig(PureMarketMakingConfig):
+    config_type: Literal['MeanReversionMarketMakingConfig'] = 'MeanReversionMarketMakingConfig'
+
+    kalman_datastore_label: str
+    long_exposure: ExposureFnConfig
+    short_exposure: ExposureFnConfig
+
+
+class PureAMMConfig(BaseModel):
     config_type: Literal['PureAMMConfig'] = 'PureAMMConfig'
     min_spread: Decimal
 
@@ -216,7 +232,7 @@ class BotConfigResponse(BaseModel):
     debug: bool = False
     strategy_config: Union[
         PureMarketMakingConfig,
-        PureMarketMakingKalmanOrdersConfig,
+        MeanReversionMarketMakingConfig,
     ] = Field(descriminator='config_type')
     datastore: DatastoreConfig
 
@@ -225,6 +241,7 @@ STRATEGY_CONFIG_CLASS_MAP = {
     "OwnLongBotConfig": OwnLongBotConfig,
     "OwnShortBotConfig": OwnShortBotConfig,
     "PureMarketMakingConfig": PureMarketMakingConfig,
+    "MeanReversionMarketMakingConfig": MeanReversionMarketMakingConfig,
     "PureMarketMakingKalmanOrdersConfig": PureMarketMakingKalmanOrdersConfig
 }
 
@@ -232,7 +249,7 @@ STRATEGY_CONFIG_CLASS_MAP = {
 class AdminConfigInput(BaseModel):
     config_type: constr(regex=f'^({"|".join(STRATEGY_CONFIG_CLASS_MAP)})$')  # noqa
     data: Optional[
-        Union[OwnLongBotConfig, OwnShortBotConfig, PureMarketMakingConfig]
+        Union[PureMarketMakingConfig, MeanReversionMarketMakingConfig]
     ] = Field(descriminator='config_type')
 
     @root_validator

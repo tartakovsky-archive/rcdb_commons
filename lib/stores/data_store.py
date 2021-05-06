@@ -21,6 +21,7 @@ class DataType(Enum):
     bot_performance = 'bot_performance'
     price_index = 'price_index'
     account_trades = 'account_trades'
+    rebates = 'rebates'
 
 
 class DataStore:
@@ -43,6 +44,8 @@ class DataStore:
             return DataType.bot_performance
         if "trades_count_buy" in cols:
             return DataType.account_trades
+        if "rebate" in cols:
+            return DataType.rebates
 
         return None
 

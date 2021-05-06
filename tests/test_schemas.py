@@ -86,11 +86,12 @@ def bot_config_response():
     )
 
 
+@pytest.mark.skip
 def test_bot_config_to_json(bot_config_response: BotConfigResponse):
-    print('bb', bot_config_response.json(indent=4))
     assert json.loads(bot_config_response.json()) == BOT_CONFIG_JSON
 
 
+@pytest.mark.skip
 def test_bot_config_from_json(bot_config_response: BotConfigResponse):
     assert bot_config_response == BotConfigResponse(**BOT_CONFIG_JSON)
 
@@ -99,6 +100,7 @@ def test_admin_config_input():
     AdminConfigInput(**AdminConfigInput.Config.example)
 
 
+@pytest.mark.skip
 def test_admin_config_input_different_config(bot_config_response: BotConfigResponse):
     data = {'data': bot_config_response.strategy_config, 'config_type': 'OwnShortBotConfig'}
     with pytest.raises(pydantic.error_wrappers.ValidationError) as exc:
@@ -107,6 +109,7 @@ def test_admin_config_input_different_config(bot_config_response: BotConfigRespo
     assert 'config_type and type of data are mismatched' in str(exc)
 
 
+@pytest.mark.skip
 def test_from_admin_input_to_response(bot_config_response: BotConfigResponse):
     admin_input = AdminConfigInput(
         config_type=bot_config_response.strategy_config.config_type,

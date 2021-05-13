@@ -158,28 +158,49 @@ class OwnShortBotConfig(BotDefaultConfig):
 
 
 ##########################################
-# MarketMaking
+# MarketMakingÁ
 ##########################################
 
-class PureMarketMakingConfig(BaseModel):
-    config_type: Literal['PureMarketMakingConfig'] = 'PureMarketMakingConfig'
+class BaseOneAssetConfig(BaseModel):
     exchange_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
+
+    process_step_frequency_sec: float = 0.5
+
     symbol: Symbol = SYMBOL_EMPTY
+    order_replace_frequency: Decimal = Decimal("0.0")
+    price_change_tolerance: Decimal = Decimal("0.0")
+
+    bid_dust_amount: Decimal = Decimal("0.0")
+    ask_dust_amount: Decimal = Decimal("0.0")
+
+    order_amount_fraction: Decimal = Decimal("0.25")
+
+
+class PureMarketMakingConfig(BaseOneAssetConfig):
+    config_type: Literal['PureMarketMakingConfig'] = 'PureMarketMakingConfig'
 
     bid_spread: Decimal = Decimal("0.0")
     ask_spread: Decimal = Decimal("0.0")
 
     minimum_spread: Decimal = Decimal("0.0")
-    dust_amount: Decimal = Decimal("0.0")
-
-    price_change_tolerance: Decimal = Decimal("0.0")
 
     order_amount_max: Decimal = Decimal("0.0")
     order_amount_divider = Decimal("10.0")
     order_amount_min: Decimal = Decimal("0.0")
 
+    order_amount_fraction: Decimal
+
     bid_levels: int = 1
     ask_levels: int = 1
+
+
+class PureMarketMakingCrossPriceConfig(PureMarketMakingConfig):
+    config_type: Literal['PureMarketMakingCrossPriceConfig'] = 'PureMarketMakingCrossPriceConfig'
+
+    exchange_price_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
+    symbol_price: Symbol = SYMBOL_EMPTY
+
+    kalman_datastore_label: str
 
 
 class PureMarketMakingKalmanOrdersConfig(PureMarketMakingConfig):
@@ -197,8 +218,6 @@ class ExposureFnConfig(BaseModel):
 
 class KalmanStepGainConfig(BaseModel):
     config_type: Literal['KalmanStepGainConfig'] = 'KalmanStepGainConfig'
-    exchange_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
-    symbol: Symbol = SYMBOL_EMPTY
     kalman_datastore_label: str
 
     long_exposure: ExposureFnConfig
@@ -207,6 +226,14 @@ class KalmanStepGainConfig(BaseModel):
     price_change_tolerance: Decimal = Decimal("0.0")
     order_amount_max: Decimal
     order_amount_min: Decimal
+
+
+class MeanReversionConfig(BaseOneAssetConfig):
+    config_type: Literal['MeanReversionConfig'] = 'MeanReversionConfig'
+
+    kalman_datastore_label: str
+    long_exposure: ExposureFnConfig
+    short_exposure: ExposureFnConfig
 
 
 class MeanReversionMarketMakingConfig(PureMarketMakingConfig):
@@ -232,6 +259,8 @@ class BotConfigResponse(BaseModel):
     debug: bool = False
     strategy_config: Union[
         PureMarketMakingConfig,
+        PureMarketMakingCrossPriceConfig,
+        MeanReversionConfig,
         MeanReversionMarketMakingConfig,
     ] = Field(descriminator='config_type')
     datastore: DatastoreConfig
@@ -242,6 +271,7 @@ STRATEGY_CONFIG_CLASS_MAP = {
     "OwnShortBotConfig": OwnShortBotConfig,
     "PureMarketMakingConfig": PureMarketMakingConfig,
     "MeanReversionMarketMakingConfig": MeanReversionMarketMakingConfig,
+    "MeanReversionConfig": MeanReversionConfig,
     "PureMarketMakingKalmanOrdersConfig": PureMarketMakingKalmanOrdersConfig
 }
 
@@ -249,7 +279,10 @@ STRATEGY_CONFIG_CLASS_MAP = {
 class AdminConfigInput(BaseModel):
     config_type: constr(regex=f'^({"|".join(STRATEGY_CONFIG_CLASS_MAP)})$')  # noqa
     data: Optional[
-        Union[PureMarketMakingConfig, MeanReversionMarketMakingConfig]
+        Union[
+            PureMarketMakingConfig,
+            MeanReversionMarketMakingConfig,
+        ]
     ] = Field(descriminator='config_type')
 
     @root_validator

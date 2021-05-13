@@ -102,6 +102,15 @@ class Instrument(BaseModel):
         return self.symbol.to_binance()
 
 
+class FuturesFundingRate(BaseModel):
+    instrument: Instrument
+    market_price: Decimal
+    index_price: Decimal
+    funding_rate: Decimal
+    interest_rate: Decimal
+    next_funding_time: int
+
+
 class OrderSide(Enum):
     BUY = "BUY"
     SELL = "SELL"
@@ -129,17 +138,12 @@ class OrderStatus(Enum):
     ERROR = "ERROR"
 
 
-OrderbookLevelTuple = Tuple[Decimal, Decimal]
+# OrderbookLevelTuple = Tuple[Decimal, Decimal]
 
 
-class OrderbookLevel(OrderbookLevelTuple):
-    @property
-    def price(self) -> Decimal:
-        return self[0]
-
-    @property
-    def amount(self) -> Decimal:
-        return self[1]
+class OrderbookLevel(BaseModel):
+    price: Decimal
+    amount: Decimal
 
 
 # class AssetBalance(BaseModel):
@@ -228,42 +232,6 @@ class OrderbookSpread(BaseModel):
     ask: OrderbookLevel
 
 
-class OrderBook(BaseModel):
-    bids: List[OrderbookLevel]
-    asks: List[OrderbookLevel]
-
-    @property
-    def bid_best(self) -> Decimal:
-        return self.bids[0][0]
-
-    @property
-    def ask_best(self) -> Decimal:
-        return self.asks[0][0]
-
-    def bid_ask_no_dust(self, dust_amount: Decimal = Decimal('0.0')) -> (OrderbookLevel, OrderbookLevel):
-        bid_price: Decimal = None
-        bid_vol: Decimal = Decimal("0.0")
-        for lvl in self.bids:
-            bid_vol += lvl.amount
-            if bid_vol > dust_amount:
-                bid_price = lvl.price
-                break
-
-        ask_price = None
-        ask_vol = Decimal("0.0")
-        for lvl in self.asks:
-            ask_vol += lvl.amount
-            if ask_vol > dust_amount:
-                ask_price = lvl.price
-                break
-
-        return OrderbookLevel((bid_price, bid_vol)), OrderbookLevel((ask_price, ask_vol))
-
-    def price_bid_ask_no_dust(self, dust_amount: Decimal = Decimal('0.0')) -> (Decimal, Decimal):
-        bid, ask = self.bid_ask_no_dust(dust_amount)
-        return bid.price, ask.price
-
-
 class Trade(BaseModel):
     symbol: Symbol
     side: OrderSide
@@ -308,3 +276,70 @@ class Order(BaseModel):
     @property
     def amount_to_precision(self) -> Decimal:
         return self.to_precision(self.amount, self.instrument.amount_precision, round_down=True)
+
+
+class OrderBook(BaseModel):
+    bids: List[OrderbookLevel]
+    asks: List[OrderbookLevel]
+
+    @property
+    def bid_best(self) -> Decimal:
+        return self.bids[0].price
+
+    @property
+    def ask_best(self) -> Decimal:
+        return self.asks[0].price
+
+    def remove_orders_liquidity(self, orders: List[Order]):
+        skip_status = {
+            OrderStatus.ERROR,
+            OrderStatus.CANCELED,
+            OrderStatus.FILLED,
+        }
+
+        for o in orders:
+            if o.status not in skip_status:
+                vol_minus = o.amount - o.amount_filled
+                ob_side = self.bids if o.side == OrderSide.BUY else self.asks
+                for i in range(len(ob_side)):
+                    if ob_side[i].price == o.price:
+                        ob_side[i].amount -= vol_minus
+                        ob_side[i].amount = max(ob_side[i].amount, Decimal(0.0))
+
+    def bid_ask_no_dust(self, bid_dust_amount: Decimal = Decimal('0.0'),
+                              ask_dust_amount: Decimal = Decimal('0.0'),
+                              tick_size: Decimal = Decimal('0.0')) -> (
+    OrderbookLevel, OrderbookLevel):
+        def get_price_no_dust(orderbook_levels, dust_amount, plus_tick):
+            price: Decimal = None
+            vol: Decimal = Decimal("0.0")
+            for i in range(len(orderbook_levels)):
+                lvl = orderbook_levels[i]
+                vol += lvl.amount
+                vol_to_dust_ratio = vol / dust_amount
+                if vol_to_dust_ratio > 1:
+                    # if vol_to_dust_ratio < 1.1:
+                    #     price = lvl.price - plus_tick
+                    if vol_to_dust_ratio > 1.8:
+                        if i != 0:
+                            price = lvl.price + plus_tick
+                        else:
+                            price = lvl.price
+                    else:
+                        price = lvl.price
+
+                    break
+            return OrderbookLevel(price=price, amount=vol)
+
+        return (
+                    self.bids[0] if bid_dust_amount <= Decimal("0.0") else get_price_no_dust(self.bids, bid_dust_amount, tick_size),
+                    self.asks[0] if ask_dust_amount <= Decimal("0.0") else get_price_no_dust(self.asks, ask_dust_amount, -tick_size)
+        )
+
+    def price_bid_ask_no_dust(self,
+                              bid_dust_amount: Decimal = Decimal('0.0'),
+                              ask_dust_amount: Decimal = Decimal('0.0'),
+                              tick_size: Decimal = Decimal('0.0')) -> (
+    Decimal, Decimal):
+        bid, ask = self.bid_ask_no_dust(bid_dust_amount, ask_dust_amount, tick_size)
+        return bid.price, ask.price

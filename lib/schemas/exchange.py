@@ -1,9 +1,8 @@
-import decimal
 from enum import Enum
 from decimal import Decimal
 
 from pydantic import BaseModel
-from pydantic.typing import Literal, List, Tuple, Dict, Union
+from pydantic.typing import List, Dict, Union
 
 from helpers.rounding import to_precision
 
@@ -265,7 +264,6 @@ class Order(BaseModel):
     def to_precision(value: Decimal, precision: int, round_down=True) -> Decimal:
         return to_precision(value, precision, round_down)
 
-
     @property
     def price_to_precision(self) -> Decimal:
         if self.side == OrderSide.BUY:
@@ -307,11 +305,11 @@ class OrderBook(BaseModel):
                         ob_side[i].amount = max(ob_side[i].amount, Decimal(0.0))
 
     def bid_ask_no_dust(self, bid_dust_amount: Decimal = Decimal('0.0'),
-                              ask_dust_amount: Decimal = Decimal('0.0'),
-                              tick_size: Decimal = Decimal('0.0')) -> (
-    OrderbookLevel, OrderbookLevel):
+                        ask_dust_amount: Decimal = Decimal('0.0'),
+                        tick_size: Decimal = Decimal('0.0')) -> (OrderbookLevel, OrderbookLevel):
         def get_price_no_dust(orderbook_levels, dust_amount, plus_tick):
-            price: Decimal = None
+            # set price as worst possible in orderbook
+            price: Decimal = orderbook_levels[-1].price
             vol: Decimal = Decimal("0.0")
             for i in range(len(orderbook_levels)):
                 lvl = orderbook_levels[i]
@@ -327,19 +325,19 @@ class OrderBook(BaseModel):
                             price = lvl.price
                     else:
                         price = lvl.price
-
                     break
             return OrderbookLevel(price=price, amount=vol)
 
         return (
-                    self.bids[0] if bid_dust_amount <= Decimal("0.0") else get_price_no_dust(self.bids, bid_dust_amount, tick_size),
-                    self.asks[0] if ask_dust_amount <= Decimal("0.0") else get_price_no_dust(self.asks, ask_dust_amount, -tick_size)
+            self.bids[0] if bid_dust_amount <= Decimal("0.0") else get_price_no_dust(
+                self.bids, bid_dust_amount, tick_size),
+            self.asks[0] if ask_dust_amount <= Decimal("0.0") else get_price_no_dust(
+                self.asks, ask_dust_amount, -tick_size)
         )
 
     def price_bid_ask_no_dust(self,
                               bid_dust_amount: Decimal = Decimal('0.0'),
                               ask_dust_amount: Decimal = Decimal('0.0'),
-                              tick_size: Decimal = Decimal('0.0')) -> (
-    Decimal, Decimal):
+                              tick_size: Decimal = Decimal('0.0')) -> (Decimal, Decimal):
         bid, ask = self.bid_ask_no_dust(bid_dust_amount, ask_dust_amount, tick_size)
         return bid.price, ask.price

@@ -26,16 +26,16 @@ class ExchangeCredentialsEmpty(ExchangeCredentials):
 
 class BorrowingConfig(BaseModel):
     is_base_borrow_enabled: bool = False
-    base_amount_max: float = 0.0
-    base_borrow_level_pct: float = 0.0
-    base_repay_level_pct: float = 0.0
+    base_amount_max: Decimal = Decimal("0.0")
+    base_borrow_level_pct: Decimal = Decimal("0.0")
+    base_repay_level_pct: Decimal = Decimal("0.0")
 
     is_quote_borrow_enabled: bool = False
-    quote_amount_max: float = 0.0
-    quote_borrow_level_pct: float = 0.0
-    quote_repay_level_pct: float = 0.0
+    quote_amount_max: Decimal = Decimal("0.0")
+    quote_borrow_level_pct: Decimal = Decimal("0.0")
+    quote_repay_level_pct: Decimal = Decimal("0.0")
 
-    margin_level_max: float = 1.5
+    margin_level_max: Decimal = Decimal("1.5")
 
 
 class DatastoreConfig(BaseModel):
@@ -163,6 +163,7 @@ class OwnShortBotConfig(BotDefaultConfig):
 
 class BaseOneAssetConfig(BaseModel):
     exchange_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
+    borrow_config: BorrowingConfig = BorrowingConfig()
 
     process_step_frequency_sec: float = 0.5
 
@@ -244,6 +245,14 @@ class MeanReversionMarketMakingConfig(PureMarketMakingConfig):
     short_exposure: ExposureFnConfig
 
 
+class KalmanSkewedMarketMakingConfig(PureMarketMakingConfig):
+    config_type: Literal['KalmanSkewedMarketMakingConfig'] = 'KalmanSkewedMarketMakingConfig'
+
+    kalman_datastore_label: str
+    long_exposure: ExposureFnConfig
+    short_exposure: ExposureFnConfig
+
+
 class PureAMMConfig(BaseModel):
     config_type: Literal['PureAMMConfig'] = 'PureAMMConfig'
     min_spread: Decimal
@@ -262,6 +271,7 @@ class BotConfigResponse(BaseModel):
         PureMarketMakingCrossPriceConfig,
         MeanReversionConfig,
         MeanReversionMarketMakingConfig,
+        KalmanSkewedMarketMakingConfig
     ] = Field(descriminator='config_type')
     datastore: DatastoreConfig
 
@@ -272,7 +282,8 @@ STRATEGY_CONFIG_CLASS_MAP = {
     "PureMarketMakingConfig": PureMarketMakingConfig,
     "MeanReversionMarketMakingConfig": MeanReversionMarketMakingConfig,
     "MeanReversionConfig": MeanReversionConfig,
-    "PureMarketMakingKalmanOrdersConfig": PureMarketMakingKalmanOrdersConfig
+    "PureMarketMakingKalmanOrdersConfig": PureMarketMakingKalmanOrdersConfig,
+    "KalmanSkewedMarketMakingConfig": KalmanSkewedMarketMakingConfig
 }
 
 

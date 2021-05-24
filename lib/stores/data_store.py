@@ -69,11 +69,18 @@ class DataStore:
             k: (v.upper() if k in {'exchange', 'symbol', 'instrument'} else v)
             for k, v in query.items()
         }
-        r = self.session.get(
-            f"{self.api_url}/latest/",
-            params={**query, "type": data_type.value},
-            timeout=100
-        )
+        if data_type == DataType.rebate_report:
+            r = self.session.get(
+                f"{self.api_url}/report/rebate",
+                json=query,
+                timeout=300
+            )
+        else:
+            r = self.session.get(
+                f"{self.api_url}/latest/",
+                params={**query, "type": data_type.value},
+                timeout=100
+            )
         if r.status_code == 200:
             return r.json()
         elif r.status_code == 404:

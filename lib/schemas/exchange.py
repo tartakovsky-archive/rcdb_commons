@@ -4,7 +4,7 @@ from decimal import Decimal
 from pydantic import BaseModel
 from pydantic.typing import List, Dict, Union
 
-from helpers.rounding import to_precision
+from rcdb_commons.lib.misc.rounding import to_precision
 
 
 class Exchange(Enum):
@@ -205,9 +205,12 @@ class Position(BaseModel):
     isolated_wallet: bool
 
 
+AssetBalance = Union[AssetMarginBalance, AssetSpotBalance]
+
+
 class AccountBalance(BaseModel):
     type: AccountType
-    balances: Dict[str, Union[AssetMarginBalance, AssetSpotBalance]]  # {"USDT": AssetXXXBalance}
+    balances: Dict[str, AssetBalance]  # {"USDT": AssetXXXBalance}
 
     def __getitem__(self, key):
         try:

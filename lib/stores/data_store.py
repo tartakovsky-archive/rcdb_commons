@@ -70,7 +70,7 @@ class DataStore:
             for k, v in query.items()
         }
         if data_type == DataType.rebate_report:
-            r = self.session.get(
+            r = self.session.post(
                 f"{self.api_url}/report/rebate",
                 json=query,
                 timeout=300

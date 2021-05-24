@@ -26,6 +26,7 @@ def test_init():
         (pd.DataFrame([{'balance_base': 1}]), DataType.bot_performance),
         (pd.DataFrame([{'trades_count_buy': 1}]), DataType.account_trades),
         (pd.DataFrame([{'rebate': 1}]), DataType.rebates),
+        (pd.DataFrame([{'rebate': 1, 'expected_rebate': 21}]), DataType.rebate_report),
         (pd.DataFrame([{'some': 1}]), None),
     ]
 )

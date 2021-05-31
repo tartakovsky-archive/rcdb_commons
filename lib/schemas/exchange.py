@@ -229,6 +229,10 @@ class AccountBalance(BaseModel):
             yield item
 
 
+class AccountMarginBalance(AccountBalance):
+    margin_level: Decimal
+
+
 class OrderbookSpread(BaseModel):
     bid: OrderbookLevel
     ask: OrderbookLevel
@@ -239,6 +243,7 @@ class Trade(BaseModel):
     side: OrderSide
     price: Decimal
     amount: Decimal
+    timestamp: float
 
 
 class Ticker(BaseModel):

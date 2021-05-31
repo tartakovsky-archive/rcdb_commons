@@ -175,6 +175,8 @@ class BaseOneAssetConfig(BaseModel):
     ask_dust_amount: Decimal = Decimal("0.0")
 
     order_amount_fraction: Decimal = Decimal("0.25")
+    jump_above_best_price: bool = False
+    spread_force_tighten: bool = False
 
 
 class PureMarketMakingConfig(BaseOneAssetConfig):

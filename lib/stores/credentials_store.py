@@ -1,6 +1,7 @@
 import json
 import logging
 from typing import Union
+from functools import partial
 
 from onepasswordconnectsdk.client import ItemVault, Client, new_client
 
@@ -21,7 +22,12 @@ class CredentialsStore:
     """
     def __init__(self, host: str, token: str, vault_name: str = 'prod-secrets'):
         self.client: Client = new_client(host, token)
+        self.patch_client(self.client)
         self.vault = self.get_vault_by_name(vault_name)
+
+    @staticmethod
+    def patch_client(client: Client):
+        client.session.request = partial(client.session.request, timeout=10)
 
     def get_secret(self, name: str, raw=False) -> Union[dict, str]:
         summary_item = self.client.get_item_by_title(name, self.vault.id)

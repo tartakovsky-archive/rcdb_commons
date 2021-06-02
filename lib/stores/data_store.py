@@ -22,7 +22,7 @@ class DataType(Enum):
     price_index = 'price_index'
     account_trades = 'account_trades'
     rebates = 'rebates'
-    rebate_report = 'rebate_report'
+    report = 'report'
 
 
 class DataStore:
@@ -45,8 +45,6 @@ class DataStore:
             return DataType.bot_performance
         if "trades_count_buy" in cols:
             return DataType.account_trades
-        if "rebate" in cols and "expected_rebate" in cols:
-            return DataType.rebate_report
         if "rebate" in cols:
             return DataType.rebates
 
@@ -69,9 +67,9 @@ class DataStore:
             k: (v.upper() if k in {'exchange', 'symbol', 'instrument'} else v)
             for k, v in query.items()
         }
-        if data_type == DataType.rebate_report:
+        if data_type == DataType.report:
             r = self.session.post(
-                f"{self.api_url}/report/rebate",
+                f"{self.api_url}/report/",
                 json=query,
                 timeout=300
             )

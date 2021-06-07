@@ -1,0 +1,52 @@
+version: '3.7'
+
+x-env-vars: &env-vars
+  SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY:-SECRET}
+  SENTRY_POSTGRES_HOST: postgres
+  SENTRY_DB_USER: sentry
+  SENTRY_DB_PASSWORD: sentry
+  POSTGRES_USER: sentry
+  POSTGRES_PASSWORD: sentry
+  SENTRY_REDIS_HOST: redis
+
+services:
+  redis:
+    image: redis:6-alpine
+
+  postgres:
+    image: postgres:12-alpine
+    environment:
+      <<: *env-vars
+    volumes:
+     - pgdb:/var/lib/postgresql/data
+
+  sentry:
+    image: sentry
+    ports:
+     - 9000:9000
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      <<: *env-vars
+
+  cron:
+    image: sentry
+    depends_on:
+      - postgres
+      - redis
+    command: sentry run cron
+    environment:
+      <<: *env-vars
+
+  worker:
+    image: sentry
+    depends_on:
+      - postgres
+      - redis
+    command: sentry run worker
+    environment:
+      <<: *env-vars
+
+volumes:
+   pgdb:

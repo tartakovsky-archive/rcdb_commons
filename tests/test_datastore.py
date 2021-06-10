@@ -25,7 +25,7 @@ def test_init():
         (pd.DataFrame([{'s1_x': 1}]), DataType.kalman),
         (pd.DataFrame([{'balance_base': 1}]), DataType.bot_performance),
         (pd.DataFrame([{'trades_count_buy': 1}]), DataType.account_trades),
-        (pd.DataFrame([{'report': 1}]), DataType.report),
+        # (pd.DataFrame([{'report': 1}]), DataType.report),
         (pd.DataFrame([{"timestamp": 1, "account_type": 1, "symbol": 1, "rebate": 1, "name": 1, "rebate_usd": 1}]),
          DataType.rebates),
         (pd.DataFrame([{'some': 1}]), None),

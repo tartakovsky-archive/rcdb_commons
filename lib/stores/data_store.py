@@ -47,8 +47,6 @@ class DataStore:
             return DataType.account_trades
         if {"timestamp", "account_type", "symbol", "rebate", "name", "rebate_usd"} == set(cols):
             return DataType.rebates
-        if "report" in cols:
-            return DataType.report
 
         return None
 

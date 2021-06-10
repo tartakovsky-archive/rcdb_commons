@@ -45,8 +45,10 @@ class DataStore:
             return DataType.bot_performance
         if "trades_count_buy" in cols:
             return DataType.account_trades
-        if "report" in cols:
+        if {"timestamp", "account_type", "symbol", "rebate", "name", "rebate_usd"} == set(cols):
             return DataType.rebates
+        if "report" in cols:
+            return DataType.report
 
         return None
 

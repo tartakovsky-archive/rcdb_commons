@@ -28,6 +28,7 @@ def test_init():
         # (pd.DataFrame([{'report': 1}]), DataType.report),
         (pd.DataFrame([{"timestamp": 1, "account_type": 1, "symbol": 1, "rebate": 1, "name": 1, "rebate_usd": 1}]),
          DataType.rebates),
+        (pd.DataFrame([{'bid': 1, 'ask': 1}]), DataType.bid_ask),
         (pd.DataFrame([{'some': 1}]), None),
     ]
 )

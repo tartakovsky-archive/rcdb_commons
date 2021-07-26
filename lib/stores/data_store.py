@@ -25,6 +25,7 @@ class DataType(Enum):
     report = 'report'
     bid_ask = 'bid_ask'
     balance = 'balance'
+    transfers = 'transfers'
 
 
 class DataStore:
@@ -53,6 +54,8 @@ class DataStore:
             return DataType.bid_ask
         if "amount_usd" in cols and "interest_usd" in cols:
             return DataType.balance
+        if {"timestamp", "symbol", "name", "transfer_type", "amount", "amount_usd"} == cols:
+            return DataType.transfers
 
         return None
 

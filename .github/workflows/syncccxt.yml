@@ -1,0 +1,14 @@
+name: Sync-CCXT
+
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Sync
+        run: |
+          git clone https://${{ secrets.GH_TOKEN }}@github.com/kroitor/ccxt.pro.git
+          ls -al
+          git remotes -v

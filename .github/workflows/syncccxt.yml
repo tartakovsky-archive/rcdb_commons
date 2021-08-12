@@ -9,6 +9,7 @@ jobs:
       - name: Sync
         run: |
           git clone https://${{ secrets.GH_TOKEN }}@github.com/hcmc-project/ccxt.pro.git
+          cd ccxt.pro
           git remote add upstream github.com/kroitor/ccxt.pro.git
           git fetch upstream
           git checkout master

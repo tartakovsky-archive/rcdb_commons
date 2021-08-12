@@ -5,10 +5,12 @@ on: [workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Sync
         run: |
-          git clone https://${{ secrets.GH_TOKEN }}@github.com/kroitor/ccxt.pro.git
-          ls -al
-          git remotes -v
+          git clone https://${{ secrets.GH_TOKEN }}@github.com/hcmc-project/ccxt.pro.git
+          git remote add upstream github.com/kroitor/ccxt.pro.git
+          git fetch upstream
+          git checkout master
+          git rebase upstream/master
+          git push -f origin master

@@ -1,9 +1,9 @@
 from decimal import Decimal
 
 from pydantic import BaseModel, Field, constr, root_validator
-from pydantic.typing import Optional, Literal, Union
+from pydantic.typing import Optional, Literal, Union, List
 
-from .exchange import Exchange, AccountType, Symbol, SYMBOL_EMPTY
+from .exchange import Exchange, AccountType, Symbol, SymbolFutures, SYMBOL_EMPTY
 
 
 class ExchangeCredentials(BaseModel):
@@ -13,6 +13,18 @@ class ExchangeCredentials(BaseModel):
 
     def is_filled(self) -> bool:
         return isinstance(self.credentials, dict)
+
+    @property
+    def is_spot(self):
+        return self.type == AccountType.SPOT
+
+    @property
+    def is_margin(self):
+        return self.type == AccountType.CROSS_MARGIN
+
+    @property
+    def is_futures(self):
+        return self.type in {AccountType.COIN_M_FUTURES, AccountType.USDT_M_FUTURES}
 
 
 # EXCHANGE_CREDENTIALS_EMPTY = ExchangeCredentials(exchange="EMPTY", credentials={}, type="EMPTY")
@@ -177,6 +189,25 @@ class BaseOneAssetConfig(BaseModel):
     order_amount_fraction: Decimal = Decimal("0.25")
     jump_above_best_price: bool = False
     spread_force_tighten: bool = False
+    force_execute_level_amount: Decimal = Decimal("-1.0")
+
+    bid_buyout_level_amount: Decimal = Decimal("0.0")
+    ask_buyout_level_amount: Decimal = Decimal("0.0")
+
+    quote_allowed_limit: Decimal = None
+
+    order_hard_limit_interval: int = 10
+    order_hard_limit_count: int = 50
+    stats_file: str = None
+    disable_trading_on_slow_connection: bool = False
+    remove_orders_liquidity: bool = False
+    optimize_order_price: bool = False
+
+
+class BaseOneAssetFuturesConfig(BaseOneAssetConfig):
+    symbol: SymbolFutures
+    leverage: int = 1
+    collateral_asset: str
 
 
 class PureMarketMakingConfig(BaseOneAssetConfig):
@@ -192,23 +223,126 @@ class PureMarketMakingConfig(BaseOneAssetConfig):
     order_amount_min: Decimal = Decimal("0.0")
 
     order_amount_fraction: Decimal
+    add_liquidity_when_available: bool = True
+    replace_on_insufficient_funds: bool = False
+    ensure_limit_price: bool = True
 
     bid_levels: int = 1
     ask_levels: int = 1
 
 
-class PureMarketMakingCrossPriceConfig(PureMarketMakingConfig):
-    config_type: Literal['PureMarketMakingCrossPriceConfig'] = 'PureMarketMakingCrossPriceConfig'
-
-    exchange_price_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
-    symbol_price: Symbol = SYMBOL_EMPTY
-
-    kalman_datastore_label: str
+class PureMarketMakingSpikeFilterConfig(PureMarketMakingConfig):
+    config_type: Literal['PureMarketMakingSpikeFilterConfig'] = 'PureMarketMakingSpikeFilterConfig'
+    price_history_interval_sec: float = 60
+    enable_high_low_spread_pct: Decimal = None
+    adjust_spread_pct: Decimal = None
 
 
-class PureMarketMakingKalmanOrdersConfig(PureMarketMakingConfig):
-    config_type: Literal['PureMarketMakingKalmanOrdersConfig'] = 'PureMarketMakingKalmanOrdersConfig'
-    kalman_datastore_label: str
+class PureMarketMakingFuturesConfig(BaseOneAssetFuturesConfig):
+    config_type: Literal['PureMarketMakingFuturesConfig'] = 'PureMarketMakingFuturesConfig'
+
+    bid_spread: Decimal = Decimal("0.0")
+    ask_spread: Decimal = Decimal("0.0")
+
+    minimum_spread: Decimal = Decimal("0.0")
+
+    order_amount_max: Decimal = Decimal("0.0")
+    order_amount_divider = Decimal("10.0")
+    order_amount_min: Decimal = Decimal("0.0")
+
+    order_amount_fraction: Decimal
+    ensure_limit_price: bool = True
+
+    bid_levels: int = 1
+    ask_levels: int = 1
+
+
+class OrderBookCollectorSpotConfig(BaseModel):
+    config_type: Literal['OrderBookCollectorSpotConfig'] = 'OrderBookCollectorSpotConfig'
+
+    exchange_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
+    data_collect_directory: str
+    symbols: List[Symbol]
+
+
+class OrderBookCollectorFuturesConfig(BaseModel):
+    config_type: Literal['OrderBookCollectorFuturesConfig'] = 'OrderBookCollectorFuturesConfig'
+
+    exchange_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
+    data_collect_directory: str
+    symbols: List[SymbolFutures]
+
+
+
+class CrossExchangeMarketMakingFuturesConfig(PureMarketMakingFuturesConfig):
+    config_type: Literal['CrossExchangeMarketMakingFuturesConfig'] = 'CrossExchangeMarketMakingFuturesConfig'
+    exchange_credentials_cross: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
+    symbol_cross: SymbolFutures
+
+    bid_dust_amount_cross: Decimal = Decimal("0.0")
+    ask_dust_amount_cross: Decimal = Decimal("0.0")
+
+
+class FuturesToFuturesHedgingConfig(PureMarketMakingFuturesConfig):
+    config_type: Literal['FuturesToFuturesHedgingConfig'] = 'FuturesToFuturesHedgingConfig'
+    exchange_credentials_hedge: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
+    symbol_hedge: SymbolFutures
+
+
+class HedgeSpotTask(BaseModel):
+    asset__hedge_target: str
+    symbol: SymbolFutures
+
+
+class HedgeSpotTasks(BaseModel):
+    exchange_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
+    tasks: List[HedgeSpotTask]
+
+
+class SpotToFuturesHedgingConfig(PureMarketMakingFuturesConfig):
+    config_type: Literal['SpotToFuturesHedgingConfig'] = 'SpotToFuturesHedgingConfig'
+    hedge_accounts: List[HedgeSpotTasks]
+    atomic_hedge__order_max_cost: Decimal = Decimal("100.0")
+
+
+class TrendFollowingMakingConfig(PureMarketMakingConfig):
+    config_type: Literal['TrendFollowingMakingConfig'] = 'TrendFollowingMakingConfig'
+    sma_slow_len: int
+    sma_fast_len: int
+    sma_timeframe_sec: float
+    sma_price_change_sec: float
+
+
+class TrendFollowingMakingFuturesConfig(PureMarketMakingFuturesConfig):
+    config_type: Literal['TrendFollowingMakingFuturesConfig'] = 'TrendFollowingMakingFuturesConfig'
+    sma_slow_len: int
+    sma_fast_len: int
+    sma_timeframe_sec: float
+    sma_price_change_sec: float
+
+
+class TrendFilterMarketMakingConfig(PureMarketMakingConfig):
+    config_type: Literal['TrendFilterMarketMakingConfig'] = 'TrendFilterMarketMakingConfig'
+    kalman_slow_label: str
+    kalman_fast_label: str
+
+
+class PureMarketMakingExternalPriceConfig(PureMarketMakingConfig):
+    config_type: Literal['PureMarketMakingExternalPriceConfig'] = 'PureMarketMakingExternalPriceConfig'
+
+    exchange_external_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
+    symbol_external: Symbol = SYMBOL_EMPTY
+
+    enforce_external_price: bool = False
+    enforce_external_price: bool = False
+
+    #
+    # kalman_datastore_label: str
+
+
+# class PureMarketMakingKalmanOrdersConfig(PureMarketMakingConfig):
+#     config_type: Literal['PureMarketMakingKalmanOrdersConfig'] = 'PureMarketMakingKalmanOrdersConfig'
+#     kalman_datastore_label: str
 
 
 class ExposureFnConfig(BaseModel):
@@ -219,45 +353,45 @@ class ExposureFnConfig(BaseModel):
     direction: str = 'long'
 
 
-class KalmanStepGainConfig(BaseModel):
-    config_type: Literal['KalmanStepGainConfig'] = 'KalmanStepGainConfig'
-    kalman_datastore_label: str
-
-    long_exposure: ExposureFnConfig
-    short_exposure: ExposureFnConfig
-    dust_amount: Decimal = Decimal("0.0")
-    price_change_tolerance: Decimal = Decimal("0.0")
-    order_amount_max: Decimal
-    order_amount_min: Decimal
-
-
-class MeanReversionConfig(BaseOneAssetConfig):
-    config_type: Literal['MeanReversionConfig'] = 'MeanReversionConfig'
-
-    kalman_datastore_label: str
-    long_exposure: ExposureFnConfig
-    short_exposure: ExposureFnConfig
+# class KalmanStepGainConfig(BaseModel):
+#     config_type: Literal['KalmanStepGainConfig'] = 'KalmanStepGainConfig'
+#     kalman_datastore_label: str
+#
+#     long_exposure: ExposureFnConfig
+#     short_exposure: ExposureFnConfig
+#     dust_amount: Decimal = Decimal("0.0")
+#     price_change_tolerance: Decimal = Decimal("0.0")
+#     order_amount_max: Decimal
+#     order_amount_min: Decimal
 
 
-class MeanReversionMarketMakingConfig(PureMarketMakingConfig):
-    config_type: Literal['MeanReversionMarketMakingConfig'] = 'MeanReversionMarketMakingConfig'
+# class MeanReversionConfig(BaseOneAssetConfig):
+#     config_type: Literal['MeanReversionConfig'] = 'MeanReversionConfig'
+#
+#     kalman_datastore_label: str
+#     long_exposure: ExposureFnConfig
+#     short_exposure: ExposureFnConfig
+#
+#
+# class MeanReversionMarketMakingConfig(PureMarketMakingConfig):
+#     config_type: Literal['MeanReversionMarketMakingConfig'] = 'MeanReversionMarketMakingConfig'
+#
+#     kalman_datastore_label: str
+#     long_exposure: ExposureFnConfig
+#     short_exposure: ExposureFnConfig
+#
+#
+# class KalmanSkewedMarketMakingConfig(PureMarketMakingConfig):
+#     config_type: Literal['KalmanSkewedMarketMakingConfig'] = 'KalmanSkewedMarketMakingConfig'
+#
+#     kalman_datastore_label: str
+#     long_exposure: ExposureFnConfig
+#     short_exposure: ExposureFnConfig
 
-    kalman_datastore_label: str
-    long_exposure: ExposureFnConfig
-    short_exposure: ExposureFnConfig
 
-
-class KalmanSkewedMarketMakingConfig(PureMarketMakingConfig):
-    config_type: Literal['KalmanSkewedMarketMakingConfig'] = 'KalmanSkewedMarketMakingConfig'
-
-    kalman_datastore_label: str
-    long_exposure: ExposureFnConfig
-    short_exposure: ExposureFnConfig
-
-
-class PureAMMConfig(BaseModel):
-    config_type: Literal['PureAMMConfig'] = 'PureAMMConfig'
-    min_spread: Decimal
+# class PureAMMConfig(BaseModel):
+#     config_type: Literal['PureAMMConfig'] = 'PureAMMConfig'
+#     min_spread: Decimal
 
 
 ##########################################
@@ -269,23 +403,36 @@ class BotConfigResponse(BaseModel):
     bot_id: int
     debug: bool = False
     strategy_config: Union[
+        FuturesToFuturesHedgingConfig,
+        CrossExchangeMarketMakingFuturesConfig,
         PureMarketMakingConfig,
-        PureMarketMakingCrossPriceConfig,
-        MeanReversionConfig,
-        MeanReversionMarketMakingConfig,
-        KalmanSkewedMarketMakingConfig
+        OrderBookCollectorFuturesConfig,
+        OrderBookCollectorSpotConfig,
+        PureMarketMakingExternalPriceConfig,
+        SpotToFuturesHedgingConfig,
+        PureMarketMakingSpikeFilterConfig
     ] = Field(descriminator='config_type')
     datastore: DatastoreConfig
 
 
 STRATEGY_CONFIG_CLASS_MAP = {
-    "OwnLongBotConfig": OwnLongBotConfig,
-    "OwnShortBotConfig": OwnShortBotConfig,
+    # "OwnLongBotConfig": OwnLongBotConfig,
+    # "OwnShortBotConfig": OwnShortBotConfig,
     "PureMarketMakingConfig": PureMarketMakingConfig,
-    "MeanReversionMarketMakingConfig": MeanReversionMarketMakingConfig,
-    "MeanReversionConfig": MeanReversionConfig,
-    "PureMarketMakingKalmanOrdersConfig": PureMarketMakingKalmanOrdersConfig,
-    "KalmanSkewedMarketMakingConfig": KalmanSkewedMarketMakingConfig
+    "TrendFollowingMakingFuturesConfig": TrendFollowingMakingFuturesConfig,
+    "CrossExchangeMarketMakingFuturesConfig": CrossExchangeMarketMakingFuturesConfig,
+    "PureMarketMakingFuturesConfig": PureMarketMakingFuturesConfig,
+    "FuturesToFuturesHedgingConfig": FuturesToFuturesHedgingConfig,
+    "SpotToFuturesHedgingConfig": SpotToFuturesHedgingConfig,
+    "OrderBookCollectorFuturesConfig": OrderBookCollectorFuturesConfig,
+    "OrderBookCollectorSpotConfig": OrderBookCollectorSpotConfig,
+    "PureMarketMakingExternalPriceConfig": PureMarketMakingExternalPriceConfig,
+    "PureMarketMakingSpikeFilterConfig": PureMarketMakingSpikeFilterConfig
+    # "MeanReversionMarketMakingConfig": MeanReversionMarketMakingConfig,
+    # "MeanReversionConfig": MeanReversionConfig,
+    # "PureMarketMakingKalmanOrdersConfig": PureMarketMakingKalmanOrdersConfig,
+    # "KalmanSkewedMarketMakingConfig": KalmanSkewedMarketMakingConfig,
+    # "TrendFilterMarketMakingConfig": TrendFilterMarketMakingConfig
 }
 
 
@@ -294,7 +441,14 @@ class AdminConfigInput(BaseModel):
     data: Optional[
         Union[
             PureMarketMakingConfig,
-            MeanReversionMarketMakingConfig,
+            PureMarketMakingFuturesConfig,
+            CrossExchangeMarketMakingFuturesConfig,
+            TrendFollowingMakingFuturesConfig,
+            OrderBookCollectorSpotConfig,
+            OrderBookCollectorFuturesConfig,
+            SpotToFuturesHedgingConfig,
+            PureMarketMakingExternalPriceConfig,
+            PureMarketMakingSpikeFilterConfig
         ]
     ] = Field(descriminator='config_type')
 

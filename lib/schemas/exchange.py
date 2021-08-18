@@ -328,7 +328,12 @@ class TransferType(Enum):
     PAY_MAIN = 'PAY_MAIN'
     MAIN_DEPOSIT = 'MAIN_DEPOSIT'
     MAIN_WITHDRAWAL = 'MAIN_WITHDRAWAL'
+    UMFUTURE_DEPOSIT = 'UMFUTURE_DEPOSIT'
 
     @classmethod
     def external_transfers(cls) -> set:
         return {cls.MAIN_DEPOSIT, cls.MAIN_WITHDRAWAL}
+
+    @classmethod
+    def sub_accounts_transfers(cls) -> set:
+        return {cls.UMFUTURE_DEPOSIT}

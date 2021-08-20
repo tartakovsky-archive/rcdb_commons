@@ -54,7 +54,7 @@ class DataStore:
             return DataType.bid_ask
         if "amount_usd" in cols and "interest_usd" in cols:
             return DataType.balance
-        if {"timestamp", "symbol", "name", "transfer_type", "amount", "amount_usd"} == cols:
+        if {"timestamp", "symbol", "name", "transfer_type", "amount", "amount_usd", "is_sub_account_transfer"} == cols:
             return DataType.transfers
 
         return None

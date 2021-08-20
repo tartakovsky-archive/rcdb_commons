@@ -30,7 +30,9 @@ def test_init():
                         "account_type": 1, "symbol": 1, "rebate": 1, "name": 1, "rebate_usd": 1}]),
          DataType.rebates),
         (
-            pd.DataFrame([{"timestamp": 1, "symbol": 1, "name": 1, "transfer_type": 1, "amount": 1, "amount_usd": 1}]),
+            pd.DataFrame([
+                {"timestamp": 1, "symbol": 1, "name": 1,
+                 "transfer_type": 1, "amount": 1, "amount_usd": 1, "is_sub_account_transfer": 1}]),
             DataType.transfers
         ),
         (pd.DataFrame([{'bid': 1, 'ask': 1}]), DataType.bid_ask),

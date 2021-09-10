@@ -233,9 +233,15 @@ class PureMarketMakingConfig(BaseOneAssetConfig):
 
 class PureMarketMakingSpikeFilterConfig(PureMarketMakingConfig):
     config_type: Literal['PureMarketMakingSpikeFilterConfig'] = 'PureMarketMakingSpikeFilterConfig'
-    price_history_interval_sec: float = 60
+
+    price_history_interval_sec: int = 60
     enable_high_low_spread_pct: Decimal = None
     adjust_spread_pct: Decimal = None
+
+    trend_history_interval_sec: int = None
+    bid_spread_down_trend: Decimal = None
+    ask_spread_up_trend: Decimal = None
+    trend_ticks_gte: int = None
 
 
 class PureMarketMakingFuturesConfig(BaseOneAssetFuturesConfig):
@@ -319,6 +325,7 @@ class TrendFollowingMakingFuturesConfig(PureMarketMakingFuturesConfig):
     sma_fast_len: int
     sma_timeframe_sec: float
     sma_price_change_sec: float
+    symbol: SymbolFutures
 
 
 class TrendFilterMarketMakingConfig(PureMarketMakingConfig):
@@ -403,14 +410,15 @@ class BotConfigResponse(BaseModel):
     bot_id: int
     debug: bool = False
     strategy_config: Union[
-        FuturesToFuturesHedgingConfig,
-        CrossExchangeMarketMakingFuturesConfig,
-        PureMarketMakingConfig,
-        OrderBookCollectorFuturesConfig,
-        OrderBookCollectorSpotConfig,
-        PureMarketMakingExternalPriceConfig,
-        SpotToFuturesHedgingConfig,
-        PureMarketMakingSpikeFilterConfig
+        # FuturesToFuturesHedgingConfig,
+        # CrossExchangeMarketMakingFuturesConfig,
+        # PureMarketMakingConfig,
+        # OrderBookCollectorFuturesConfig,
+        # OrderBookCollectorSpotConfig,
+        # PureMarketMakingExternalPriceConfig,
+        # SpotToFuturesHedgingConfig,
+        # PureMarketMakingSpikeFilterConfig,
+        TrendFollowingMakingFuturesConfig
     ] = Field(descriminator='config_type')
     datastore: DatastoreConfig
 

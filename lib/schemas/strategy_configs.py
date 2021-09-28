@@ -207,7 +207,7 @@ class BaseOneAssetConfig(BaseModel):
 class BaseOneAssetFuturesConfig(BaseOneAssetConfig):
     symbol: SymbolFutures
     leverage: int = 1
-    collateral_asset: str
+    # collateral_asset: str
 
 
 class PureMarketMakingConfig(BaseOneAssetConfig):
@@ -244,23 +244,26 @@ class PureMarketMakingSpikeFilterConfig(PureMarketMakingConfig):
     trend_ticks_gte: int = None
 
 
-class PureMarketMakingFuturesConfig(BaseOneAssetFuturesConfig):
+class PureMarketMakingFuturesConfig(PureMarketMakingConfig):
     config_type: Literal['PureMarketMakingFuturesConfig'] = 'PureMarketMakingFuturesConfig'
 
-    bid_spread: Decimal = Decimal("0.0")
-    ask_spread: Decimal = Decimal("0.0")
+    symbol: SymbolFutures
+    leverage: int = 1
 
-    minimum_spread: Decimal = Decimal("0.0")
-
-    order_amount_max: Decimal = Decimal("0.0")
-    order_amount_divider = Decimal("10.0")
-    order_amount_min: Decimal = Decimal("0.0")
-
-    order_amount_fraction: Decimal
-    ensure_limit_price: bool = True
-
-    bid_levels: int = 1
-    ask_levels: int = 1
+    # bid_spread: Decimal = Decimal("0.0")
+    # ask_spread: Decimal = Decimal("0.0")
+    #
+    # minimum_spread: Decimal = Decimal("0.0")
+    #
+    # order_amount_max: Decimal = Decimal("0.0")
+    # order_amount_divider = Decimal("10.0")
+    # order_amount_min: Decimal = Decimal("0.0")
+    #
+    # order_amount_fraction: Decimal
+    # ensure_limit_price: bool = True
+    #
+    # bid_levels: int = 1
+    # ask_levels: int = 1
 
 
 class OrderBookCollectorSpotConfig(BaseModel):
@@ -279,6 +282,10 @@ class OrderBookCollectorFuturesConfig(BaseModel):
     symbols: List[SymbolFutures]
 
 
+class SpotMemoryStreamConfig(BaseOneAssetConfig):
+    config_type: Literal['SpotMemoryStreamConfig'] = 'SpotMemoryStreamConfig'
+    symbols: List[Symbol]
+
 
 class CrossExchangeMarketMakingFuturesConfig(PureMarketMakingFuturesConfig):
     config_type: Literal['CrossExchangeMarketMakingFuturesConfig'] = 'CrossExchangeMarketMakingFuturesConfig'
@@ -287,12 +294,6 @@ class CrossExchangeMarketMakingFuturesConfig(PureMarketMakingFuturesConfig):
 
     bid_dust_amount_cross: Decimal = Decimal("0.0")
     ask_dust_amount_cross: Decimal = Decimal("0.0")
-
-
-class FuturesToFuturesHedgingConfig(PureMarketMakingFuturesConfig):
-    config_type: Literal['FuturesToFuturesHedgingConfig'] = 'FuturesToFuturesHedgingConfig'
-    exchange_credentials_hedge: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
-    symbol_hedge: SymbolFutures
 
 
 class HedgeSpotTask(BaseModel):
@@ -309,6 +310,12 @@ class SpotToFuturesHedgingConfig(PureMarketMakingFuturesConfig):
     config_type: Literal['SpotToFuturesHedgingConfig'] = 'SpotToFuturesHedgingConfig'
     hedge_accounts: List[HedgeSpotTasks]
     atomic_hedge__order_max_cost: Decimal = Decimal("100.0")
+
+
+class FuturesToFuturesHedgingConfig(SpotToFuturesHedgingConfig):
+    config_type: Literal['FuturesToFuturesHedgingConfig'] = 'FuturesToFuturesHedgingConfig'
+    exchange_credentials_hedge: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
+    # symbol_hedge: SymbolFutures
 
 
 class TrendFollowingMakingConfig(PureMarketMakingConfig):
@@ -346,6 +353,9 @@ class PureMarketMakingExternalPriceConfig(PureMarketMakingConfig):
     #
     # kalman_datastore_label: str
 
+class PureMarketMakingFuturesExternalPriceConfig(PureMarketMakingExternalPriceConfig):
+    config_type: Literal['PureMarketMakingFuturesExternalPriceConfig'] = 'PureMarketMakingFuturesExternalPriceConfig'
+    leverage: Decimal = Decimal("1.0")
 
 # class PureMarketMakingKalmanOrdersConfig(PureMarketMakingConfig):
 #     config_type: Literal['PureMarketMakingKalmanOrdersConfig'] = 'PureMarketMakingKalmanOrdersConfig'
@@ -410,15 +420,18 @@ class BotConfigResponse(BaseModel):
     bot_id: int
     debug: bool = False
     strategy_config: Union[
-        # FuturesToFuturesHedgingConfig,
-        # CrossExchangeMarketMakingFuturesConfig,
-        # PureMarketMakingConfig,
-        # OrderBookCollectorFuturesConfig,
-        # OrderBookCollectorSpotConfig,
-        # PureMarketMakingExternalPriceConfig,
-        # SpotToFuturesHedgingConfig,
-        # PureMarketMakingSpikeFilterConfig,
-        TrendFollowingMakingFuturesConfig
+        PureMarketMakingFuturesConfig,
+        PureMarketMakingConfig,
+        FuturesToFuturesHedgingConfig,
+        CrossExchangeMarketMakingFuturesConfig,
+        OrderBookCollectorFuturesConfig,
+        OrderBookCollectorSpotConfig,
+        PureMarketMakingExternalPriceConfig,
+        SpotToFuturesHedgingConfig,
+        PureMarketMakingSpikeFilterConfig,
+        TrendFollowingMakingFuturesConfig,
+        PureMarketMakingFuturesExternalPriceConfig,
+        SpotMemoryStreamConfig
     ] = Field(descriminator='config_type')
     datastore: DatastoreConfig
 
@@ -435,7 +448,8 @@ STRATEGY_CONFIG_CLASS_MAP = {
     "OrderBookCollectorFuturesConfig": OrderBookCollectorFuturesConfig,
     "OrderBookCollectorSpotConfig": OrderBookCollectorSpotConfig,
     "PureMarketMakingExternalPriceConfig": PureMarketMakingExternalPriceConfig,
-    "PureMarketMakingSpikeFilterConfig": PureMarketMakingSpikeFilterConfig
+    "PureMarketMakingSpikeFilterConfig": PureMarketMakingSpikeFilterConfig,
+    "SpotMemoryStreamConfig": SpotMemoryStreamConfig
     # "MeanReversionMarketMakingConfig": MeanReversionMarketMakingConfig,
     # "MeanReversionConfig": MeanReversionConfig,
     # "PureMarketMakingKalmanOrdersConfig": PureMarketMakingKalmanOrdersConfig,
@@ -456,7 +470,8 @@ class AdminConfigInput(BaseModel):
             OrderBookCollectorFuturesConfig,
             SpotToFuturesHedgingConfig,
             PureMarketMakingExternalPriceConfig,
-            PureMarketMakingSpikeFilterConfig
+            PureMarketMakingSpikeFilterConfig,
+            SpotMemoryStreamConfig
         ]
     ] = Field(descriminator='config_type')
 

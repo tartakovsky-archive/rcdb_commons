@@ -15,7 +15,7 @@ class Exchange(Enum):
     binanceusdm = "binanceusdm"
     binancecoinm = "binancecoinm"
     ascendex = "ascendex"
-
+    huobi = "huobi"
     kraken = "kraken"
     okex = "okex"
 
@@ -145,6 +145,9 @@ class Instrument(BaseModel):
 
     def to_binance(self):
         return self.symbol.to_binance()
+
+    def to_str(self):
+        return f"{self.to_binance()}-{self.type.value}"
 
 
 class FuturesFundingRate(BaseModel):
@@ -276,6 +279,19 @@ class Position(BaseModel):
     has_pending_events: bool = False
     wait_update_since: float = None
 
+    @property
+    def base(self):
+        zero = Decimal("0.0")
+        if self.amount >= zero:
+            return AssetMarginBalance(
+                free=zero,
+                locked=zero,
+                total=zero,
+                borrowed=zero,
+                interest=zero,
+                net=zero
+            )
+
     def refresh_required(self):
         self.has_pending_events = True
         self.wait_update_since = time.time() * 1000
@@ -296,6 +312,52 @@ class Position(BaseModel):
     #         'timestamp': 'updateTime'
     #     }
 
+
+class Positions(BaseModel):
+    positions: Dict[str, Position]
+    collateral: Decimal = None
+
+    @property
+    def margin_balance(self):
+        balance = self.collateral
+        for p in self.positions.values():
+            balance += p.unrealized_profit
+
+        return balance
+
+    # def __calc_amounts(self, symbol_name):
+    #     p = self.position[symbol_name].amount
+    #     base = max(Decimal("0.0"), p)
+    #     quote = self.margin_balance
+    #     return base, quote
+    #
+    # def base_amount(self, symbol_name):
+    #     base, quote = self.__calc_amounts(symbol_name)
+    #
+    #     return AssetMarginBalance(
+    #         name=symbol_name,
+    #         free=,
+    #         locked=,
+    #         total=,
+    #         borrowed=,
+    #         interest=,
+    #         net=)
+
+    def __getitem__(self, item):
+        if item in self.positions:
+            return self.positions[item]
+        else:
+            return Position(
+                symbol=SymbolFutures(name=item),
+                unrealized_profit=Decimal("0.0"),
+                amount=Decimal("0.0")
+            )
+
+    def __setitem__(self, key, value):
+        self.positions[key] = value
+
+    def __contains__(self, item):
+        return item in self.positions
 
 AssetBalance = Union[AssetMarginBalance, AssetSpotBalance, AssetFuturesBalance]
 

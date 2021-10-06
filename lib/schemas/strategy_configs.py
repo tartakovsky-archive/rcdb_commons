@@ -203,6 +203,9 @@ class BaseOneAssetConfig(BaseModel):
     remove_orders_liquidity: bool = False
     optimize_order_price: bool = False
 
+    class Config:
+        arbitrary_types_allowed = True
+
 
 class BaseOneAssetFuturesConfig(BaseOneAssetConfig):
     symbol: SymbolFutures
@@ -242,6 +245,7 @@ class PureMarketMakingSpikeFilterConfig(PureMarketMakingConfig):
     bid_spread_down_trend: Decimal = None
     ask_spread_up_trend: Decimal = None
     trend_ticks_gte: int = None
+    trend_ticks_pct: Decimal = None
 
 
 class PureMarketMakingFuturesConfig(PureMarketMakingConfig):
@@ -273,6 +277,9 @@ class OrderBookCollectorSpotConfig(BaseModel):
     data_collect_directory: str
     symbols: List[Symbol]
 
+    class Config:
+        arbitrary_types_allowed = True
+
 
 class OrderBookCollectorFuturesConfig(BaseModel):
     config_type: Literal['OrderBookCollectorFuturesConfig'] = 'OrderBookCollectorFuturesConfig'
@@ -281,10 +288,6 @@ class OrderBookCollectorFuturesConfig(BaseModel):
     data_collect_directory: str
     symbols: List[SymbolFutures]
 
-
-class SpotMemoryStreamConfig(BaseOneAssetConfig):
-    config_type: Literal['SpotMemoryStreamConfig'] = 'SpotMemoryStreamConfig'
-    symbols: List[Symbol]
 
 
 class CrossExchangeMarketMakingFuturesConfig(PureMarketMakingFuturesConfig):
@@ -421,17 +424,16 @@ class BotConfigResponse(BaseModel):
     debug: bool = False
     strategy_config: Union[
         PureMarketMakingFuturesConfig,
-        PureMarketMakingConfig,
         FuturesToFuturesHedgingConfig,
         CrossExchangeMarketMakingFuturesConfig,
+        PureMarketMakingConfig,
         OrderBookCollectorFuturesConfig,
         OrderBookCollectorSpotConfig,
         PureMarketMakingExternalPriceConfig,
         SpotToFuturesHedgingConfig,
         PureMarketMakingSpikeFilterConfig,
         TrendFollowingMakingFuturesConfig,
-        PureMarketMakingFuturesExternalPriceConfig,
-        SpotMemoryStreamConfig
+        PureMarketMakingFuturesExternalPriceConfig
     ] = Field(descriminator='config_type')
     datastore: DatastoreConfig
 
@@ -448,8 +450,7 @@ STRATEGY_CONFIG_CLASS_MAP = {
     "OrderBookCollectorFuturesConfig": OrderBookCollectorFuturesConfig,
     "OrderBookCollectorSpotConfig": OrderBookCollectorSpotConfig,
     "PureMarketMakingExternalPriceConfig": PureMarketMakingExternalPriceConfig,
-    "PureMarketMakingSpikeFilterConfig": PureMarketMakingSpikeFilterConfig,
-    "SpotMemoryStreamConfig": SpotMemoryStreamConfig
+    "PureMarketMakingSpikeFilterConfig": PureMarketMakingSpikeFilterConfig
     # "MeanReversionMarketMakingConfig": MeanReversionMarketMakingConfig,
     # "MeanReversionConfig": MeanReversionConfig,
     # "PureMarketMakingKalmanOrdersConfig": PureMarketMakingKalmanOrdersConfig,
@@ -470,8 +471,7 @@ class AdminConfigInput(BaseModel):
             OrderBookCollectorFuturesConfig,
             SpotToFuturesHedgingConfig,
             PureMarketMakingExternalPriceConfig,
-            PureMarketMakingSpikeFilterConfig,
-            SpotMemoryStreamConfig
+            PureMarketMakingSpikeFilterConfig
         ]
     ] = Field(descriminator='config_type')
 

@@ -6,6 +6,7 @@ from pydantic import BaseModel, validator, condecimal
 from pydantic.typing import List, Dict, Union
 
 from rcdb_commons.lib.misc.rounding import to_precision
+from rcdb_commons.lib.misc.types import to_decimal
 
 
 class Exchange(Enum):
@@ -15,9 +16,11 @@ class Exchange(Enum):
     binanceusdm = "binanceusdm"
     binancecoinm = "binancecoinm"
     ascendex = "ascendex"
-    huobi = "huobi"
+
     kraken = "kraken"
     okex = "okex"
+
+    kucoin = "kucoin"
 
 
 # class SymbolEmpty(BaseModel):
@@ -28,6 +31,10 @@ class Exchange(Enum):
 class Symbol(BaseModel):
     base: str
     quote: str
+    #
+    # def __init__(self, base, quote):
+    #     self.base = base
+    #     self.quote = quote
 
     @classmethod
     def from_ccxt(cls, symbol_str):
@@ -44,6 +51,9 @@ class Symbol(BaseModel):
 
     def to_binance(self):
         return f"{self.base}{self.quote}"
+
+    def to_kucoin(self):
+        return f"{self.base}-{self.quote}"
 
 
 class SymbolExtras(BaseModel):
@@ -63,6 +73,9 @@ class SymbolFutures(BaseModel):
     #     return cls(name=symbol_str)
 
     def to_ccxt(self):
+        return self.name
+
+    def to_kucoin(self):
         return self.name
 
     def to_binance(self):
@@ -106,6 +119,18 @@ class AccountType(Enum):
             labels = map(lambda choice: (choice[0].value, choice[1]), labels)
         return list(labels)
 
+    @property
+    def is_spot(self):
+        return self == AccountType.SPOT
+
+    @property
+    def is_margin(self):
+        return self == AccountType.CROSS_MARGIN
+
+    @property
+    def is_futures(self):
+        return self in {AccountType.COIN_M_FUTURES, AccountType.USDT_M_FUTURES}
+
 
 class Instrument(BaseModel):
     symbol: SymbolAny
@@ -119,6 +144,9 @@ class Instrument(BaseModel):
 
     order_notional_min: Decimal = Decimal("0.0")
     order_notional_max: Decimal = Decimal("0.0")
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @property
     def price_tick(self):
@@ -146,8 +174,8 @@ class Instrument(BaseModel):
     def to_binance(self):
         return self.symbol.to_binance()
 
-    def to_str(self):
-        return f"{self.to_binance()}-{self.type.value}"
+    def to_kucoin(self):
+        return self.symbol.to_kucoin()
 
 
 class FuturesFundingRate(BaseModel):
@@ -208,29 +236,44 @@ def gte(name: str) -> str:
     return ' '.join((word.capitalize()) for word in name.split(' '))
 
 
-class AssetSpotBalance(BaseModel):
-    name: str
-    free: condecimal(ge=Decimal("0.0"))
-    locked: condecimal(ge=Decimal("0.0"))
-    total: Decimal
+class AssetSpotBalance:
+    # name: str
+    # free: condecimal(ge=Decimal("0.0"))
+    # locked: condecimal(ge=Decimal("0.0"))
+    # total: Decimal
+
+    def __init__(self, name, free, locked, total):
+        self.name: str = name
+        self.free: Decimal = free
+        self.locked: Decimal = locked
+        self.total: Decimal = total
+
+        assert free >= Decimal("0.0")
+        assert locked >= Decimal("0.0")
 
 
-class CapitalBalance(BaseModel):
-    base: condecimal(ge=Decimal("0.0"))
-    quote: condecimal(ge=Decimal("0.0"))
-
-
-class CapitalParts(BaseModel):
-    quote_own: CapitalBalance
-    base_own: CapitalBalance
-    quote_borrowed: CapitalBalance
-    base_borrowed: CapitalBalance
+# class CapitalBalance(BaseModel):
+#     base: condecimal(ge=Decimal("0.0"))
+#     quote: condecimal(ge=Decimal("0.0"))
+#
+#
+# class CapitalParts(BaseModel):
+#     quote_own: CapitalBalance
+#     base_own: CapitalBalance
+#     quote_borrowed: CapitalBalance
+#     base_borrowed: CapitalBalance
 
 
 class AssetMarginBalance(AssetSpotBalance):
     borrowed: Decimal
     interest: Decimal
     net: Decimal
+
+    def __init__(self, *args, borrowed: Decimal, interest: Decimal, net: Decimal, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.borrowed: Decimal = borrowed
+        self.interest: Decimal = interest
+        self.net: Decimal = net
 
 
 class AssetFuturesBalance(AssetSpotBalance):
@@ -359,12 +402,17 @@ class Positions(BaseModel):
     def __contains__(self, item):
         return item in self.positions
 
+
 AssetBalance = Union[AssetMarginBalance, AssetSpotBalance, AssetFuturesBalance]
 
 
-class AccountBalance(BaseModel):
-    type: AccountType
-    balances: Dict[str, AssetBalance]  # {"USDT": AssetXXXBalance}
+class AccountBalance:
+    # type: AccountType
+    # balances: Dict[str, AssetBalance]  # {"USDT": AssetXXXBalance}
+
+    def __init__(self, type: AccountType, balances: Dict[str, AssetBalance]):
+        self.type = type
+        self.balances = balances
 
     def __getitem__(self, key):
         if key.find("/") >= 0:
@@ -407,32 +455,61 @@ class AccountMarginBalance(AccountBalance):
 #     ask: OrderbookLevel
 
 
-class Trade(BaseModel):
-    symbol: SymbolAny
-    side: OrderSide
-    price: Decimal
-    amount: Decimal
-    timestamp: float
+class Trade:
+    # symbol: SymbolAny
+    # side: OrderSide
+    # price: Decimal
+    # amount: Decimal
+    # timestamp: float
+
+    def __init__(self, symbol: SymbolAny,
+                 side: OrderSide,
+                 price: Decimal,
+                 amount: Decimal,
+                 timestamp: float):
+        self.symbol: SymbolAny = symbol
+        self.side: OrderSide = side
+        self.price: Decimal = price
+        self.amount: Decimal = amount
+        self.timestamp: float = timestamp
 
 
-class Ticker(BaseModel):
-    symbol: SymbolAny
-    bid: Decimal
-    ask: Decimal
+class Ticker:
+    # symbol: SymbolAny
+    # bid: Decimal
+    # ask: Decimal
+
+    def __init__(self, symbol: SymbolAny, bid: Decimal, ask: Decimal):
+        self.symbol = symbol
+        self.bid = bid
 
 
-class Order(BaseModel):
-    id_client: str = None  # = Field(default_factory=lambda: str(uuid4()))
-    id_exchange: str = None
-    timestamp: int = None
-    instrument: Instrument
-    type: OrderType
-    status: OrderStatus = OrderStatus.SCHEDULED
-    side: OrderSide
-    price: Decimal = None  # order price, None for type = IrderType.MARKET
-    amount: Decimal  # order quantity
-    amount_filled: Decimal = Decimal('0.00000000')
-    amount_filled_latest: Decimal = Decimal('0.00000000')
+
+class Order:
+    def __init__(self,
+                 instrument: Instrument,
+                 type: OrderType,
+                 side: OrderSide,
+                 amount: Decimal,
+                 amount_filled: Decimal = Decimal('0.00000000'),
+                 amount_filled_latest: Decimal = Decimal('0.00000000'),
+                 status: OrderStatus = OrderStatus.SCHEDULED,
+                 id_client: str = None,
+                 id_exchange: str = None,
+                 price: Decimal = None,
+                 timestamp: int = None):
+
+        self.id_client: str = id_client  # = Field(default_factory=lambda: str(uuid4()))
+        self.id_exchange: str = id_exchange
+        self.timestamp: int = timestamp
+        self.instrument: Instrument = instrument
+        self.type: OrderType = type
+        self.status: OrderStatus = status
+        self.side: OrderSide = side
+        self.price: Decimal = to_decimal(price)
+        self.amount: Decimal = to_decimal(amount)
+        self.amount_filled: Decimal = to_decimal(amount_filled)
+        self.amount_filled_latest: Decimal = to_decimal(amount_filled_latest)
 
     def get_filled_pct(self) -> Decimal:
         return self.amount_filled_latest / self.amount_filled
@@ -459,8 +536,23 @@ class Order(BaseModel):
             return self.id_client
         return self.id_exchange
 
+    def dict(self):
+        return dict(
+            id_client=self.id_client,
+            id_exchange=self.id_exchange,
+            timestamp=self.timestamp,
+            instrument=self.instrument,
+            type=self.type,
+            status=self.status,
+            side=self.side,
+            price=self.price,
+            amount=self.amount,
+            amount_filled=self.amount_filled,
+            amount_filled_latest=self.amount_filled_latest
+        )
 
-class OrderBook(BaseModel):
+
+class OrderBook:
     bids: List  # [OrderbookLevel]
     asks: List  # [OrderbookLevel]
     instrument: Instrument
@@ -471,6 +563,12 @@ class OrderBook(BaseModel):
         OrderStatus.CANCELED,
         OrderStatus.FILLED,
     }
+
+    def __init__(self, bids, asks, instrument, timestamp):
+        self.bids = bids
+        self.asks = asks
+        self.instrument = instrument
+        self.timestamp = timestamp
 
     @property
     def bid_best(self) -> Decimal:

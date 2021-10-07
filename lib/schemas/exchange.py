@@ -39,6 +39,7 @@ class Symbol(BaseModel):
 
 
 class AccountType(Enum):
+    MAIN = 'MAIN'
     SPOT = 'SPOT'
     CROSS_MARGIN = 'CROSS_MARGIN'
     ISOLATED_MARGIN = 'ISOLATED_MARGIN'
@@ -52,6 +53,7 @@ class AccountType(Enum):
     @classmethod
     def labels(cls) -> dict:
         return {
+            cls.MAIN: 'Main',
             cls.SPOT: 'Spot',
             cls.CROSS_MARGIN: 'Cross Margin',
             cls.ISOLATED_MARGIN: 'Isolated Margin',

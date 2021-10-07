@@ -9,6 +9,7 @@ from lib.schemas.exchange import AccountType
         (
             True,
             [
+                ('MAIN', 'Main'),
                 ('SPOT', 'Spot'),
                 ('CROSS_MARGIN', 'Cross Margin'),
                 ('ISOLATED_MARGIN', 'Isolated Margin'),
@@ -19,6 +20,7 @@ from lib.schemas.exchange import AccountType
         (
             False,
             [
+                (AccountType.MAIN, 'Main'),
                 (AccountType.SPOT, 'Spot'),
                 (AccountType.CROSS_MARGIN, 'Cross Margin'),
                 (AccountType.ISOLATED_MARGIN, 'Isolated Margin'),
@@ -35,6 +37,7 @@ def test_AccountType_choices(use_value, test_choices):
 @pytest.mark.parametrize(
     'account_type, test_label',
     [
+        (AccountType.MAIN, 'Main'),
         (AccountType.SPOT, 'Spot'),
         (AccountType.CROSS_MARGIN, 'Cross Margin'),
         (AccountType.ISOLATED_MARGIN, 'Isolated Margin'),

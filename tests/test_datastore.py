@@ -57,7 +57,7 @@ def test_append_error_at_server(requests_mock):
     with pytest.raises(requests.exceptions.RequestException) as exc:
         DATASTORE.append(pd.DataFrame([{'high': 1}]))
 
-    assert 'Send data error 400 err req body' in str(exc)
+    assert exc.match('Send data error 400 type: ohlcv err req body')
     assert m.called
 
 

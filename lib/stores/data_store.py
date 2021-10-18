@@ -68,7 +68,9 @@ class DataStore:
             timeout=100
         )
         if r.status_code != 200:
-            raise requests.exceptions.RequestException(f'Send data error {r.status_code} {r.text}')
+            raise requests.exceptions.RequestException(
+                f'Send data error {r.status_code} type: {data_type.value} {r.text}'
+            )
 
     def __get_data(self, data_type, query) -> Optional[pd.DataFrame]:
         logger.debug(f"loading `{data_type}` with query={query}")

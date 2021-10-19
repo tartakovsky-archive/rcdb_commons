@@ -15,12 +15,14 @@ class Exchange(Enum):
     binance = "binance"
     binanceusdm = "binanceusdm"
     binancecoinm = "binancecoinm"
-    ascendex = "ascendex"
 
+    ascendex = "ascendex"
     kraken = "kraken"
     okex = "okex"
-
     kucoin = "kucoin"
+
+    bybit_spot = "bybit_spot"
+    bybit_futures = "bybit_futures"
 
 
 # class SymbolEmpty(BaseModel):

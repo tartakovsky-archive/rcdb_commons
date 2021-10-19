@@ -424,16 +424,16 @@ class BotConfigResponse(BaseModel):
     debug: bool = False
     strategy_config: Union[
         PureMarketMakingFuturesConfig,
-        FuturesToFuturesHedgingConfig,
-        CrossExchangeMarketMakingFuturesConfig,
-        PureMarketMakingConfig,
-        OrderBookCollectorFuturesConfig,
-        OrderBookCollectorSpotConfig,
-        PureMarketMakingExternalPriceConfig,
-        SpotToFuturesHedgingConfig,
-        PureMarketMakingSpikeFilterConfig,
-        TrendFollowingMakingFuturesConfig,
-        PureMarketMakingFuturesExternalPriceConfig
+        # FuturesToFuturesHedgingConfig,
+        # CrossExchangeMarketMakingFuturesConfig,
+        # PureMarketMakingConfig,
+        # OrderBookCollectorFuturesConfig,
+        # OrderBookCollectorSpotConfig,
+        # PureMarketMakingExternalPriceConfig,
+        # SpotToFuturesHedgingConfig,
+        # PureMarketMakingSpikeFilterConfig,
+        # TrendFollowingMakingFuturesConfig,
+        # PureMarketMakingFuturesExternalPriceConfig
     ] = Field(descriminator='config_type')
     datastore: DatastoreConfig
 

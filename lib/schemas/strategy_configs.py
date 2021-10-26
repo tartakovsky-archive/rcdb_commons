@@ -233,6 +233,8 @@ class PureMarketMakingConfig(BaseOneAssetConfig):
     bid_levels: int = 1
     ask_levels: int = 1
 
+    cross_spread: bool = False
+
 
 class PureMarketMakingSpikeFilterConfig(PureMarketMakingConfig):
     config_type: Literal['PureMarketMakingSpikeFilterConfig'] = 'PureMarketMakingSpikeFilterConfig'
@@ -424,16 +426,16 @@ class BotConfigResponse(BaseModel):
     debug: bool = False
     strategy_config: Union[
         PureMarketMakingFuturesConfig,
-        # FuturesToFuturesHedgingConfig,
-        # CrossExchangeMarketMakingFuturesConfig,
-        # PureMarketMakingConfig,
-        # OrderBookCollectorFuturesConfig,
-        # OrderBookCollectorSpotConfig,
-        # PureMarketMakingExternalPriceConfig,
-        # SpotToFuturesHedgingConfig,
-        # PureMarketMakingSpikeFilterConfig,
-        # TrendFollowingMakingFuturesConfig,
-        # PureMarketMakingFuturesExternalPriceConfig
+        FuturesToFuturesHedgingConfig,
+        CrossExchangeMarketMakingFuturesConfig,
+        PureMarketMakingConfig,
+        OrderBookCollectorFuturesConfig,
+        OrderBookCollectorSpotConfig,
+        PureMarketMakingExternalPriceConfig,
+        SpotToFuturesHedgingConfig,
+        PureMarketMakingSpikeFilterConfig,
+        TrendFollowingMakingFuturesConfig,
+        PureMarketMakingFuturesExternalPriceConfig
     ] = Field(descriminator='config_type')
     datastore: DatastoreConfig
 

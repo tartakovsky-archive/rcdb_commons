@@ -486,7 +486,6 @@ class Ticker:
         self.bid = bid
 
 
-
 class Order:
     def __init__(self,
                  instrument: Instrument,
@@ -500,7 +499,12 @@ class Order:
                  id_exchange: str = None,
                  price: Decimal = None,
                  timestamp: int = None):
+        """
 
+        Returns
+        -------
+        object
+        """
         self.id_client: str = id_client  # = Field(default_factory=lambda: str(uuid4()))
         self.id_exchange: str = id_exchange
         self.timestamp: int = timestamp

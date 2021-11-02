@@ -489,7 +489,7 @@ class Ticker:
 class Order:
     def __init__(self,
                  instrument: Instrument,
-                 type: OrderType,
+                 order_type: OrderType,
                  side: OrderSide,
                  amount: Decimal,
                  amount_filled: Decimal = Decimal('0.00000000'),
@@ -509,9 +509,11 @@ class Order:
         self.id_exchange: str = id_exchange
         self.timestamp: int = timestamp
         self.instrument: Instrument = instrument
-        self.type: OrderType = type
-        self.status: OrderStatus = status
-        self.side: OrderSide = side
+        if type(self.instrument) != Instrument:
+            raise Exception("type(self.instrument) != Instrument")
+        self.type: OrderType = order_type if type(order_type) == OrderType else OrderType(order_type)
+        self.status: OrderStatus = status if type(status) == OrderStatus else OrderStatus(status.upper())
+        self.side: OrderSide = side if type(side) == OrderSide else OrderSide(side.upper())
         self.price: Decimal = to_decimal(price)
         self.amount: Decimal = to_decimal(amount)
         self.amount_filled: Decimal = to_decimal(amount_filled)

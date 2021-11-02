@@ -3,7 +3,7 @@ from decimal import Decimal
 from pydantic import BaseModel, Field, constr, root_validator
 from pydantic.typing import Optional, Literal, Union, List
 
-from .exchange import Exchange, AccountType, Symbol, SymbolFutures, SYMBOL_EMPTY
+from .exchange import Exchange, AccountType, Symbol, SymbolFutures, SYMBOL_EMPTY, OrderType
 
 
 class ExchangeCredentials(BaseModel):
@@ -202,6 +202,9 @@ class BaseOneAssetConfig(BaseModel):
     disable_trading_on_slow_connection: bool = False
     remove_orders_liquidity: bool = False
     optimize_order_price: bool = False
+    order_type: OrderType = OrderType.LIMIT_MAKER
+
+    cancel_orders_on_start_stop: bool = True
 
     class Config:
         arbitrary_types_allowed = True
@@ -234,6 +237,11 @@ class PureMarketMakingConfig(BaseOneAssetConfig):
     ask_levels: int = 1
 
     cross_spread: bool = False
+    cross_spread__pct_min: float = 0.01
+    cross_spread__pct_max: float = 0.05
+    cross_spread__jump_when_skewed: bool = True
+    cross_spread__ts_freq: float = 10.0
+    cross_spread__ob_vs_own_liquidity_ratio: Decimal = Decimal("2.0")
 
 
 class PureMarketMakingSpikeFilterConfig(PureMarketMakingConfig):
@@ -289,7 +297,6 @@ class OrderBookCollectorFuturesConfig(BaseModel):
     exchange_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
     data_collect_directory: str
     symbols: List[SymbolFutures]
-
 
 
 class CrossExchangeMarketMakingFuturesConfig(PureMarketMakingFuturesConfig):

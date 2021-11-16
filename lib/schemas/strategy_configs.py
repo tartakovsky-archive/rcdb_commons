@@ -360,10 +360,15 @@ class PureMarketMakingExternalPriceConfig(PureMarketMakingConfig):
     symbol_external: Symbol = SYMBOL_EMPTY
 
     enforce_external_price: bool = False
-    enforce_external_price: bool = False
 
-    #
-    # kalman_datastore_label: str
+
+class PureMarketMakingExternalCrossPriceConfig(PureMarketMakingExternalPriceConfig):
+    config_type: Literal['PureMarketMakingExternalCrossPriceConfig'] = 'PureMarketMakingExternalCrossPriceConfig'
+
+    exchange_cross_credentials: Union[ExchangeCredentialsEmpty, ExchangeCredentials] = ExchangeCredentialsEmpty()
+    symbol_cross: Symbol = SYMBOL_EMPTY
+    is_cross_price_reversed: bool = False
+
 
 class PureMarketMakingFuturesExternalPriceConfig(PureMarketMakingExternalPriceConfig):
     config_type: Literal['PureMarketMakingFuturesExternalPriceConfig'] = 'PureMarketMakingFuturesExternalPriceConfig'
@@ -432,17 +437,18 @@ class BotConfigResponse(BaseModel):
     bot_id: int
     debug: bool = False
     strategy_config: Union[
-        PureMarketMakingFuturesConfig,
-        FuturesToFuturesHedgingConfig,
-        CrossExchangeMarketMakingFuturesConfig,
-        PureMarketMakingConfig,
-        OrderBookCollectorFuturesConfig,
-        OrderBookCollectorSpotConfig,
-        PureMarketMakingExternalPriceConfig,
-        SpotToFuturesHedgingConfig,
-        PureMarketMakingSpikeFilterConfig,
-        TrendFollowingMakingFuturesConfig,
-        PureMarketMakingFuturesExternalPriceConfig
+        PureMarketMakingExternalCrossPriceConfig,
+        # PureMarketMakingFuturesConfig,
+        # FuturesToFuturesHedgingConfig,
+        # CrossExchangeMarketMakingFuturesConfig,
+        # PureMarketMakingConfig,
+        # OrderBookCollectorFuturesConfig,
+        # OrderBookCollectorSpotConfig,
+        # PureMarketMakingExternalPriceConfig,
+        # SpotToFuturesHedgingConfig,
+        # PureMarketMakingSpikeFilterConfig,
+        # TrendFollowingMakingFuturesConfig,
+        # PureMarketMakingFuturesExternalPriceConfig,
     ] = Field(descriminator='config_type')
     datastore: DatastoreConfig
 
@@ -459,7 +465,8 @@ STRATEGY_CONFIG_CLASS_MAP = {
     "OrderBookCollectorFuturesConfig": OrderBookCollectorFuturesConfig,
     "OrderBookCollectorSpotConfig": OrderBookCollectorSpotConfig,
     "PureMarketMakingExternalPriceConfig": PureMarketMakingExternalPriceConfig,
-    "PureMarketMakingSpikeFilterConfig": PureMarketMakingSpikeFilterConfig
+    "PureMarketMakingSpikeFilterConfig": PureMarketMakingSpikeFilterConfig,
+    "PureMarketMakingExternalCrossPriceConfig": PureMarketMakingExternalCrossPriceConfig
     # "MeanReversionMarketMakingConfig": MeanReversionMarketMakingConfig,
     # "MeanReversionConfig": MeanReversionConfig,
     # "PureMarketMakingKalmanOrdersConfig": PureMarketMakingKalmanOrdersConfig,

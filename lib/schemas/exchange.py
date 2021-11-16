@@ -141,11 +141,11 @@ class Instrument(BaseModel):
 
     amount_precision: int
     price_precision: int
-    order_amount_max: Decimal
-    order_cost_min: Decimal
+    order_amount_max: Decimal = None
+    order_cost_min: Decimal = None
 
-    order_notional_min: Decimal = Decimal("0.0")
-    order_notional_max: Decimal = Decimal("0.0")
+    order_notional_min: Decimal = None
+    order_notional_max: Decimal = None
 
     class Config:
         arbitrary_types_allowed = True

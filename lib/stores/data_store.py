@@ -26,6 +26,7 @@ class DataType(Enum):
     bid_ask = 'bid_ask'
     balance = 'balance'
     transfers = 'transfers'
+    bswap_quote = 'bswap_quote'
 
 
 class DataStore:
@@ -56,6 +57,8 @@ class DataStore:
             return DataType.balance
         if {"timestamp", "symbol", "name", "transfer_type", "amount", "amount_usd", "is_sub_account_transfer"} == cols:
             return DataType.transfers
+        if {"timestamp", "symbol", "price", "slippage", "fee"} == cols:
+            return DataType.bswap_quote
 
         return None
 

@@ -244,6 +244,11 @@ class PureMarketMakingConfig(BaseOneAssetConfig):
     cross_spread__ob_vs_own_liquidity_ratio: Decimal = Decimal("2.0")
 
 
+class StatArbKalmanConfig(PureMarketMakingConfig):
+    config_type: Literal['StatArbKalmanConfig'] = 'StatArbKalmanConfig'
+    kalman_stream_name: str
+
+
 class PureMarketMakingSpikeFilterConfig(PureMarketMakingConfig):
     config_type: Literal['PureMarketMakingSpikeFilterConfig'] = 'PureMarketMakingSpikeFilterConfig'
 
@@ -437,18 +442,19 @@ class BotConfigResponse(BaseModel):
     bot_id: int
     debug: bool = False
     strategy_config: Union[
+        StatArbKalmanConfig,
         PureMarketMakingExternalCrossPriceConfig,
-        # PureMarketMakingFuturesConfig,
-        # FuturesToFuturesHedgingConfig,
-        # CrossExchangeMarketMakingFuturesConfig,
-        # PureMarketMakingConfig,
-        # OrderBookCollectorFuturesConfig,
-        # OrderBookCollectorSpotConfig,
-        # PureMarketMakingExternalPriceConfig,
-        # SpotToFuturesHedgingConfig,
-        # PureMarketMakingSpikeFilterConfig,
-        # TrendFollowingMakingFuturesConfig,
-        # PureMarketMakingFuturesExternalPriceConfig,
+        PureMarketMakingFuturesConfig,
+        FuturesToFuturesHedgingConfig,
+        CrossExchangeMarketMakingFuturesConfig,
+        PureMarketMakingConfig,
+        OrderBookCollectorFuturesConfig,
+        OrderBookCollectorSpotConfig,
+        PureMarketMakingExternalPriceConfig,
+        SpotToFuturesHedgingConfig,
+        PureMarketMakingSpikeFilterConfig,
+        TrendFollowingMakingFuturesConfig,
+        PureMarketMakingFuturesExternalPriceConfig,
     ] = Field(descriminator='config_type')
     datastore: DatastoreConfig
 
@@ -456,6 +462,7 @@ class BotConfigResponse(BaseModel):
 STRATEGY_CONFIG_CLASS_MAP = {
     # "OwnLongBotConfig": OwnLongBotConfig,
     # "OwnShortBotConfig": OwnShortBotConfig,
+    "StatArbKalmanConfig": StatArbKalmanConfig,
     "PureMarketMakingConfig": PureMarketMakingConfig,
     "TrendFollowingMakingFuturesConfig": TrendFollowingMakingFuturesConfig,
     "CrossExchangeMarketMakingFuturesConfig": CrossExchangeMarketMakingFuturesConfig,
@@ -479,6 +486,7 @@ class AdminConfigInput(BaseModel):
     config_type: constr(regex=f'^({"|".join(STRATEGY_CONFIG_CLASS_MAP)})$')  # noqa
     data: Optional[
         Union[
+            StatArbKalmanConfig,
             PureMarketMakingConfig,
             PureMarketMakingFuturesConfig,
             CrossExchangeMarketMakingFuturesConfig,

@@ -1,3 +1,5 @@
+import os
+import time
 import logging
 from enum import Enum
 from typing import Optional
@@ -32,11 +34,12 @@ class DataType(Enum):
 class DataStore:
     data_type = DataType
 
-    def __init__(self, api_url, token):
+    def __init__(self, api_url, token, cache_path=None):
         self.api_url = api_url
         self.session = requests.Session()
         self.session.mount('http://', HTTPAdapter(max_retries=retries))
         self.session.headers.update({'Authorization': f'Bearer {token}'})
+        self.cache_path = cache_path
 
     @staticmethod
     def __get_data_type(df: pd.DataFrame) -> Optional[DataType]:
@@ -120,3 +123,106 @@ class DataStore:
             df['timestamp'] = pd.to_datetime(df['timestamp'])
             df = df.set_index("timestamp")
         return df
+
+    def get_data(
+        self,
+        data_type: DataType,
+        start: str,
+        end: str,
+        params=None,
+        force_reload=False,
+        verbose=True,
+        sleep=0.5,
+        tail=100_000
+    ):
+        if self.cache_path is None:
+            raise Exception('Provide cache_path')
+
+        params = params or {}
+
+        def _get_data_ohlcv(params):
+            params = {**params, 'tail': tail}
+
+            cache_path = os.path.join(
+                self.cache_path,
+                'market_data',
+                f'{params["exchange"]}__{params["symbol"]}__{params["instrument"]}.hdf'.replace('/', '_').lower()
+            )
+
+            if not os.path.exists(cache_path) or force_reload:
+                res_df = None
+                latest_date = None
+                if verbose:
+                    print('No cache', cache_path)
+            else:
+                res_df = pd.read_hdf(cache_path, key='table')
+                latest_date = res_df.index.max()
+                if verbose:
+                    print('Cache exists', cache_path, 'latest_date', latest_date)
+
+            while True:
+                df = self.read(DataType.ohlcv, params)
+
+                if latest_date:
+                    df = df[df.index > latest_date]
+
+                if df.empty:
+                    res_df.sort_index(ascending=False, inplace=True)
+                    res_df.to_hdf(cache_path, key='table', mode='w')
+                    if len(res_df):
+                        res_df = res_df.drop('account_type', 1)
+                    return res_df
+
+                if res_df is None:
+                    res_df = df
+                else:
+                    res_df = pd.concat([res_df, df])
+
+                params['date_end'] = df.index.min().isoformat()
+                if verbose:
+                    print(params)
+                time.sleep(sleep)
+
+        def _get_bidask_swap(p, date_start, date_end, cache_path):
+            if os.path.exists(cache_path) and not force_reload:
+                if verbose:
+                    print('cache hit', cache_path)
+                return pd.read_hdf(cache_path, key='table')
+
+            res_df = pd.DataFrame([])
+            while True:
+                df = self.read(data_type, {**p, 'tail': tail, 'date_start': date_start, 'date_end': date_end})
+                df = df[df.index > start]
+
+                res_df = pd.concat([res_df, df])
+
+                if len(df) < tail:
+                    res_df.sort_index(ascending=False, inplace=True)
+                    res_df.to_hdf(cache_path, key='table')
+                    return res_df
+
+                date_end = df.index.min().isoformat()
+                if verbose:
+                    print('loading...', params, 'from', date_start, 'to', date_end, len(df), len(res_df))
+                time.sleep(sleep)
+
+        if data_type == DataType.bid_ask:
+            cache_path = os.path.join(
+                self.cache_path,
+                'spreads',
+                f'{params["exchange"]}_{params["symbol"]}_{params["account_type"]}_{start}_{end}.hdf'
+                    .replace('/', '_').lower()
+            )
+            return _get_bidask_swap(params, start, end, cache_path)
+        elif data_type == DataType.bswap_quote:
+            cache_path = os.path.join(
+                self.cache_path,
+                'bswap',
+                f'{params["symbol"]}_{start}_{end}.hdf'.replace('/', '_').lower()
+            )
+            return _get_bidask_swap({'symbol': params['symbol']}, start, end, cache_path)
+        elif data_type == DataType.ohlcv:
+            df = _get_data_ohlcv(params)
+            return df[(df.index < end) & (df.index >= start)]
+        else:
+            raise ValueError(f'Unsupported type {data_type}')

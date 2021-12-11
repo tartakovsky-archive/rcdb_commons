@@ -246,7 +246,10 @@ class PureMarketMakingConfig(BaseOneAssetConfig):
 
 class StatArbKalmanConfig(PureMarketMakingConfig):
     config_type: Literal['StatArbKalmanConfig'] = 'StatArbKalmanConfig'
-    kalman_stream_name: str
+    stream_kalman: List
+    stream_maker: List
+    stream_taker: List
+    stream_cross: List
 
 
 class PureMarketMakingSpikeFilterConfig(PureMarketMakingConfig):

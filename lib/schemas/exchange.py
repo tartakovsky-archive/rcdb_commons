@@ -1,9 +1,9 @@
 import time
-from enum import Enum
 from decimal import Decimal
+from enum import Enum
 
-from pydantic import BaseModel, validator, condecimal
-from pydantic.typing import List, Dict, Union
+from pydantic import BaseModel
+from pydantic.typing import List, Dict, Union, Literal
 
 from rcdb_commons.lib.misc.rounding import to_precision
 from rcdb_commons.lib.misc.types import to_decimal
@@ -15,6 +15,7 @@ class Exchange(Enum):
     binance = "binance"
     binanceusdm = "binanceusdm"
     binancecoinm = "binancecoinm"
+    binance_swap = "binance_swap"
 
     ascendex = "ascendex"
     kraken = "kraken"
@@ -25,14 +26,82 @@ class Exchange(Enum):
     bybit_futures = "bybit_futures"
 
 
-# class SymbolEmpty(BaseModel):
-#     base: Literal['EMPTY'] = 'EMPTY'
-#     quote: Literal['EMPTY'] = 'EMPTY'
+class AccountType(Enum):
+    SPOT = 'SPOT'
+    SWAP = "SWAP"
+    CROSS_MARGIN = 'CROSS_MARGIN'
+    ISOLATED_MARGIN = 'ISOLATED_MARGIN'
+    USDT_M_FUTURES = 'USDT_M_FUTURES'
+    COIN_M_FUTURES = 'COIN_M_FUTURES'
+
+    @property
+    def label(self) -> str:
+        return self.labels()[self]
+
+    @classmethod
+    def labels(cls) -> dict:
+        return {
+            cls.SPOT: 'Spot',
+            cls.CROSS_MARGIN: 'Cross Margin',
+            cls.ISOLATED_MARGIN: 'Isolated Margin',
+            cls.USDT_M_FUTURES: 'USDT-M Futures',
+            cls.COIN_M_FUTURES: 'COIN-M Futures'
+        }
+
+    @classmethod
+    def choices(cls, use_value: bool = True) -> List[tuple]:
+        labels = cls.labels().items()
+        if use_value:
+            labels = map(lambda choice: (choice[0].value, choice[1]), labels)
+        return list(labels)
+
+    @property
+    def is_spot(self):
+        return self == AccountType.SPOT
+
+    @property
+    def is_margin(self):
+        return self == AccountType.CROSS_MARGIN
+
+    @property
+    def is_futures(self):
+        return self in {AccountType.COIN_M_FUTURES, AccountType.USDT_M_FUTURES}
+
+
+class ExchangeCredentials(BaseModel):
+    exchange: Exchange
+    credentials: Union[dict, str]
+    type: AccountType
+
+    def is_filled(self) -> bool:
+        return isinstance(self.credentials, dict)
+
+    @property
+    def is_spot(self):
+        return self.type == AccountType.SPOT
+
+    @property
+    def is_margin(self):
+        return self.type == AccountType.CROSS_MARGIN
+
+    @property
+    def is_futures(self):
+        return self.type in {AccountType.COIN_M_FUTURES, AccountType.USDT_M_FUTURES}
+
+
+# EXCHANGE_CREDENTIALS_EMPTY = ExchangeCredentials(exchange="EMPTY", credentials={}, type="EMPTY")
+
+
+class ExchangeCredentialsEmpty(ExchangeCredentials):
+    exchange: Literal['EMPTY'] = 'EMPTY'
+    credentials: Union[dict, str] = 'EMPTY'
+    type: Literal['EMPTY'] = 'EMPTY'
 
 
 class Symbol(BaseModel):
     base: str
     quote: str
+
     #
     # def __init__(self, base, quote):
     #     self.base = base
@@ -91,47 +160,6 @@ class SymbolFutures(BaseModel):
 
 SYMBOL_EMPTY = Symbol(base="EMPTY", quote="EMPTY")
 SymbolAny = Union[Symbol, SymbolFutures]
-
-
-class AccountType(Enum):
-    SPOT = 'SPOT'
-    CROSS_MARGIN = 'CROSS_MARGIN'
-    ISOLATED_MARGIN = 'ISOLATED_MARGIN'
-    USDT_M_FUTURES = 'USDT_M_FUTURES'
-    COIN_M_FUTURES = 'COIN_M_FUTURES'
-
-    @property
-    def label(self) -> str:
-        return self.labels()[self]
-
-    @classmethod
-    def labels(cls) -> dict:
-        return {
-            cls.SPOT: 'Spot',
-            cls.CROSS_MARGIN: 'Cross Margin',
-            cls.ISOLATED_MARGIN: 'Isolated Margin',
-            cls.USDT_M_FUTURES: 'USDT-M Futures',
-            cls.COIN_M_FUTURES: 'COIN-M Futures'
-        }
-
-    @classmethod
-    def choices(cls, use_value: bool = True) -> List[tuple]:
-        labels = cls.labels().items()
-        if use_value:
-            labels = map(lambda choice: (choice[0].value, choice[1]), labels)
-        return list(labels)
-
-    @property
-    def is_spot(self):
-        return self == AccountType.SPOT
-
-    @property
-    def is_margin(self):
-        return self == AccountType.CROSS_MARGIN
-
-    @property
-    def is_futures(self):
-        return self in {AccountType.COIN_M_FUTURES, AccountType.USDT_M_FUTURES}
 
 
 class Instrument(BaseModel):

@@ -3,37 +3,8 @@ from decimal import Decimal
 from pydantic import BaseModel, Field, constr, root_validator
 from pydantic.typing import Optional, Literal, Union, List
 
-from .exchange import Exchange, AccountType, Symbol, SymbolFutures, SYMBOL_EMPTY, OrderType
-
-
-class ExchangeCredentials(BaseModel):
-    exchange: Exchange
-    credentials: Union[dict, str]
-    type: AccountType
-
-    def is_filled(self) -> bool:
-        return isinstance(self.credentials, dict)
-
-    @property
-    def is_spot(self):
-        return self.type == AccountType.SPOT
-
-    @property
-    def is_margin(self):
-        return self.type == AccountType.CROSS_MARGIN
-
-    @property
-    def is_futures(self):
-        return self.type in {AccountType.COIN_M_FUTURES, AccountType.USDT_M_FUTURES}
-
-
-# EXCHANGE_CREDENTIALS_EMPTY = ExchangeCredentials(exchange="EMPTY", credentials={}, type="EMPTY")
-
-
-class ExchangeCredentialsEmpty(ExchangeCredentials):
-    exchange: Literal['EMPTY'] = 'EMPTY'
-    credentials: Union[dict, str] = 'EMPTY'
-    type: Literal['EMPTY'] = 'EMPTY'
+from .exchange import Symbol, SymbolFutures, SYMBOL_EMPTY, OrderType, ExchangeCredentials, \
+    ExchangeCredentialsEmpty
 
 
 class BorrowingConfig(BaseModel):

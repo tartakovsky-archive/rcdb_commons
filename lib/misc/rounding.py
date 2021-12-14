@@ -8,6 +8,21 @@ def to_precision(value: Decimal, precision: int, round_down=True) -> Decimal:
     return v
 
 
+def count_zero_in_decimal_number(number):
+    zeros = 0
+    while number < Decimal("0.1"):
+        number *= Decimal("10.0")
+        zeros += 1
+    return zeros
+
+
+def to_auto_price_precision(v, rounding):
+    """
+    We want at maximum to keep 1/100 of 1bp price precision
+    """
+    return to_precision(v, count_zero_in_decimal_number(v * Decimal("0.0000001")) + 1, rounding)
+
+
 class Rounder:
     ROUND_UP = decimal.ROUND_UP
     ROUND_DOWN = decimal.ROUND_DOWN

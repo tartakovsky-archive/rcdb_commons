@@ -5,7 +5,7 @@ from enum import Enum
 from pydantic import BaseModel
 from pydantic.typing import List, Dict, Union, Literal
 
-from rcdb_commons.lib.misc.rounding import to_precision
+from rcdb_commons.lib.misc.rounding import to_precision, Rounder, to_auto_price_precision
 from rcdb_commons.lib.misc.types import to_decimal
 
 
@@ -16,6 +16,7 @@ class Exchange(Enum):
     binanceusdm = "binanceusdm"
     binancecoinm = "binancecoinm"
     binance_swap = "binance_swap"
+    binance_public = "binance_public"
 
     ascendex = "ascendex"
     kraken = "kraken"
@@ -162,18 +163,43 @@ SYMBOL_EMPTY = Symbol(base="EMPTY", quote="EMPTY")
 SymbolAny = Union[Symbol, SymbolFutures]
 
 
-class Instrument(BaseModel):
-    symbol: SymbolAny
-    exchange: Exchange
-    type: AccountType
+class Instrument:
+    def __init__(self,
+                 symbol: SymbolAny,
+                 exchange: Exchange,
+                 type: AccountType,
 
-    amount_precision: int
-    price_precision: int
-    order_amount_max: Decimal = None
-    order_cost_min: Decimal = None
+                 amount_precision: int,
+                 price_precision: int,
+                 order_amount_max: Decimal = None,
+                 order_cost_min: Decimal = None,
 
-    order_notional_min: Decimal = None
-    order_notional_max: Decimal = None
+                 order_notional_min: Decimal = None,
+                 order_notional_max: Decimal = None):
+        self.symbol: SymbolAny = symbol
+        self.exchange: Exchange = exchange
+        self.type: AccountType = type
+
+        self.amount_precision: int = self.__to_type__(amount_precision, int)
+        self.price_precision: int = self.__to_type__(price_precision, int)
+        self.order_amount_max: Decimal = self.__to_type__(order_amount_max, Decimal, nullable=True)
+        self.order_cost_min: Decimal = self.__to_type__(order_cost_min, Decimal, nullable=True)
+
+        self.order_notional_min: Decimal = self.__to_type__(order_notional_min, Decimal, nullable=True)
+        self.order_notional_max: Decimal = self.__to_type__(order_notional_max, Decimal, nullable=True)
+
+    @staticmethod
+    def __to_type__(v, t, nullable=False):
+        if not nullable and v is None:
+            raise Exception(f"Value `{v}` with type `{t}` can't be None")
+
+        if v is not None and t(v) == t:
+            return v
+
+        return t(v) if v is not None else None
+
+    def __dict__(self):
+        return [self.exchange.value, self.type.value, self.symbol.to_ccxt()]
 
     class Config:
         arbitrary_types_allowed = True
@@ -208,13 +234,13 @@ class Instrument(BaseModel):
         return self.symbol.to_kucoin()
 
 
-class FuturesFundingRate(BaseModel):
-    instrument: Instrument
-    market_price: Decimal
-    index_price: Decimal
-    funding_rate: Decimal
-    interest_rate: Decimal
-    next_funding_time: int
+# class FuturesFundingRate(BaseModel):
+#     instrument: Instrument
+#     market_price: Decimal
+#     index_price: Decimal
+#     funding_rate: Decimal
+#     interest_rate: Decimal
+#     next_funding_time: int
 
 
 class OrderSide(Enum):
@@ -592,7 +618,7 @@ class OrderBook:
     bids: List  # [OrderbookLevel]
     asks: List  # [OrderbookLevel]
     instrument: Instrument
-    timestamp: int = None
+    timestamp: float = None
 
     skip_status = {
         OrderStatus.ERROR,
@@ -605,6 +631,17 @@ class OrderBook:
         self.asks = asks
         self.instrument = instrument
         self.timestamp = timestamp
+
+    @property
+    def __dict__(self):
+        return {
+            "b": str(to_auto_price_precision(self.bids[0].price, Rounder.ROUND_DOWN)),
+            "b_a": str(self.bids[0].amount),
+            "a": str(to_auto_price_precision(self.asks[0].price, Rounder.ROUND_UP)),
+            "a_a": str(self.asks[0].amount),
+            "ts_e": self.timestamp,
+            "ts_l": self.timestamp,
+        }
 
     @property
     def bid_best(self) -> Decimal:

@@ -187,6 +187,11 @@ class BaseOneAssetFuturesConfig(BaseOneAssetConfig):
     # collateral_asset: str
 
 
+class BSwapSellConfig(BaseOneAssetConfig):
+    config_type: Literal['BSwapSellConfig'] = 'BSwapSellConfig'
+    asset_to_contract_map: dict
+
+
 class PureMarketMakingConfig(BaseOneAssetConfig):
     config_type: Literal['PureMarketMakingConfig'] = 'PureMarketMakingConfig'
 
@@ -416,6 +421,7 @@ class BotConfigResponse(BaseModel):
     bot_id: int
     debug: bool = False
     strategy_config: Union[
+        BSwapSellConfig,
         StatArbKalmanConfig,
         PureMarketMakingExternalCrossPriceConfig,
         PureMarketMakingFuturesConfig,
@@ -436,6 +442,7 @@ class BotConfigResponse(BaseModel):
 STRATEGY_CONFIG_CLASS_MAP = {
     # "OwnLongBotConfig": OwnLongBotConfig,
     # "OwnShortBotConfig": OwnShortBotConfig,
+    "BSwapSellConfig": BSwapSellConfig,
     "StatArbKalmanConfig": StatArbKalmanConfig,
     "PureMarketMakingConfig": PureMarketMakingConfig,
     "TrendFollowingMakingFuturesConfig": TrendFollowingMakingFuturesConfig,
@@ -460,6 +467,7 @@ class AdminConfigInput(BaseModel):
     config_type: constr(regex=f'^({"|".join(STRATEGY_CONFIG_CLASS_MAP)})$')  # noqa
     data: Optional[
         Union[
+            BSwapSellConfig,
             StatArbKalmanConfig,
             PureMarketMakingConfig,
             PureMarketMakingFuturesConfig,

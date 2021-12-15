@@ -220,6 +220,11 @@ class PureMarketMakingConfig(BaseOneAssetConfig):
     cross_spread__ob_vs_own_liquidity_ratio: Decimal = Decimal("2.0")
 
 
+class PureMarketMakingExternalPriceZMQConfig(PureMarketMakingConfig):
+    config_type: Literal['PureMarketMakingExternalPriceZMQConfig'] = 'PureMarketMakingExternalPriceZMQConfig'
+    stream_price_external: List[str]
+
+
 class StatArbKalmanConfig(PureMarketMakingConfig):
     config_type: Literal['StatArbKalmanConfig'] = 'StatArbKalmanConfig'
     stream_kalman: List
@@ -421,6 +426,7 @@ class BotConfigResponse(BaseModel):
     bot_id: int
     debug: bool = False
     strategy_config: Union[
+        PureMarketMakingExternalPriceZMQConfig,
         BSwapSellConfig,
         StatArbKalmanConfig,
         PureMarketMakingExternalCrossPriceConfig,
@@ -442,6 +448,7 @@ class BotConfigResponse(BaseModel):
 STRATEGY_CONFIG_CLASS_MAP = {
     # "OwnLongBotConfig": OwnLongBotConfig,
     # "OwnShortBotConfig": OwnShortBotConfig,
+    "PureMarketMakingExternalPriceZMQConfig": PureMarketMakingExternalPriceZMQConfig,
     "BSwapSellConfig": BSwapSellConfig,
     "StatArbKalmanConfig": StatArbKalmanConfig,
     "PureMarketMakingConfig": PureMarketMakingConfig,
@@ -467,6 +474,7 @@ class AdminConfigInput(BaseModel):
     config_type: constr(regex=f'^({"|".join(STRATEGY_CONFIG_CLASS_MAP)})$')  # noqa
     data: Optional[
         Union[
+            PureMarketMakingExternalPriceZMQConfig,
             BSwapSellConfig,
             StatArbKalmanConfig,
             PureMarketMakingConfig,

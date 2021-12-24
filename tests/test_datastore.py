@@ -38,6 +38,9 @@ def test_init():
         (pd.DataFrame([{'bid': 1, 'ask': 1}]), DataType.bid_ask),
         (pd.DataFrame([{'interest_usd': 1, 'amount_usd': 1}]), DataType.balance),
         (pd.DataFrame([{"timestamp": 1, "symbol": 1, "price": 1, "slippage": 1, "fee": 1}]), DataType.bswap_quote),
+        (pd.DataFrame([{"timestamp": 1, "channel": 1, "ts_l": 1, "b": 1, "a": 1, "b_a": 1, "a_a": 1}]),
+         DataType.orderbook),
+        (pd.DataFrame([{"timestamp": 1, "channel": 1, "art": 1, "brt": 1}]), DataType.kalman_log),
         (pd.DataFrame([{'some': 1}]), None),
     ]
 )

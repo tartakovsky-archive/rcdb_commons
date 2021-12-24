@@ -29,6 +29,8 @@ class DataType(Enum):
     balance = 'balance'
     transfers = 'transfers'
     bswap_quote = 'bswap_quote'
+    orderbook = 'orderbook'
+    kalman_log = 'kalman_log'
 
 
 class DataStore:
@@ -62,7 +64,10 @@ class DataStore:
             return DataType.transfers
         if {"timestamp", "symbol", "price", "slippage", "fee"} == cols:
             return DataType.bswap_quote
-
+        if {"timestamp", "ts_l", "channel", "b", "a", "b_a", "a_a"} == cols:
+            return DataType.orderbook
+        if {"timestamp", "channel", "art", "brt"} == cols:
+            return DataType.kalman_log
         return None
 
     def __send_data(self, data_type: DataType, rows):
@@ -212,8 +217,9 @@ class DataStore:
             os.makedirs(cache_dir, exist_ok=True)
             cache_path = os.path.join(
                 cache_dir,
-                f'{params["exchange"]}_{params["symbol"]}_{params["account_type"]}_{start}_{end}.hdf'
-                    .replace('/', '_').lower()
+                (
+                    f'{params["exchange"]}_{params["symbol"]}_{params["account_type"]}_{start}_{end}.hdf'
+                ).replace('/', '_').lower()
             )
             return _get_bidask_swap(params, start, end, cache_path)
         elif data_type == DataType.bswap_quote:

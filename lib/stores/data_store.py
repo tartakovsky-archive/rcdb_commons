@@ -234,11 +234,11 @@ class DataStore:
             cache_dir = os.path.join(self.cache_path, 'kalman_log_zmq')
             os.makedirs(cache_dir, exist_ok=True)
             cache_path = os.path.join(cache_dir, f'{params["channel"]}_{start}_{end}.hdf'.replace('/', '_').lower())
-            return _get_bidask_swap({'symbol': params['channel']}, start, end, cache_path)
+            return _get_bidask_swap({'channel': params['channel']}, start, end, cache_path)
         elif data_type == DataType.orderbook:
             cache_dir = os.path.join(self.cache_path, 'orderbook_zmq')
             os.makedirs(cache_dir, exist_ok=True)
             cache_path = os.path.join(cache_dir, f'{params["channel"]}_{start}_{end}.hdf'.replace('/', '_').lower())
-            return _get_bidask_swap({'symbol': params['channel']}, start, end, cache_path)
+            return _get_bidask_swap({'channel': params['channel']}, start, end, cache_path)
         else:
             raise ValueError(f'Unsupported type {data_type}')

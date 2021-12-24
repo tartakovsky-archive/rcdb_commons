@@ -143,9 +143,10 @@ class DataStore:
         def _get_data_ohlcv(params):
             params = {**params, 'tail': tail}
 
+            cache_dir = os.path.join(self.cache_path, 'market_data')
+            os.makedirs(cache_dir, exist_ok=True)
             cache_path = os.path.join(
-                self.cache_path,
-                'market_data',
+                cache_dir,
                 f'{params["exchange"]}__{params["symbol"]}__{params["instrument"]}.hdf'.replace('/', '_').lower()
             )
 
@@ -207,19 +208,18 @@ class DataStore:
                 time.sleep(sleep)
 
         if data_type == DataType.bid_ask:
+            cache_dir = os.path.join(self.cache_path, 'spreads')
+            os.makedirs(cache_dir, exist_ok=True)
             cache_path = os.path.join(
-                self.cache_path,
-                'spreads',
+                cache_dir,
                 f'{params["exchange"]}_{params["symbol"]}_{params["account_type"]}_{start}_{end}.hdf'
                     .replace('/', '_').lower()
             )
             return _get_bidask_swap(params, start, end, cache_path)
         elif data_type == DataType.bswap_quote:
-            cache_path = os.path.join(
-                self.cache_path,
-                'bswap',
-                f'{params["symbol"]}_{start}_{end}.hdf'.replace('/', '_').lower()
-            )
+            cache_dir = os.path.join(self.cache_path, 'bswap')
+            os.makedirs(cache_dir, exist_ok=True)
+            cache_path = os.path.join(cache_dir, f'{params["symbol"]}_{start}_{end}.hdf'.replace('/', '_').lower())
             return _get_bidask_swap({'symbol': params['symbol']}, start, end, cache_path)
         elif data_type == DataType.ohlcv:
             df = _get_data_ohlcv(params)

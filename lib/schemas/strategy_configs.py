@@ -161,6 +161,9 @@ class BaseOneAssetConfig(BaseModel):
     balance_base_reserved: Decimal = Decimal("0.0")
     balance_quote_reserved: Decimal = Decimal("0.0")
 
+    balance_base_reserved: Decimal = Decimal("0.0")
+    balance_quote_reserved: Decimal = Decimal("0.0")
+
     order_amount_fraction: Decimal = Decimal("0.25")
     jump_above_best_price: bool = False
     spread_force_tighten: bool = False

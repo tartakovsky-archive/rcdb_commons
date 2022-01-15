@@ -678,13 +678,14 @@ class OrderBook:
             vol += lvl.amount
             vol_to_dust_ratio = vol / dust_amount
             if vol_to_dust_ratio > 1:
-                if vol_to_dust_ratio > 1.8:
-                    if i != 0:
-                        price = lvl.price + plus_tick
-                    else:
-                        price = lvl.price
-                else:
-                    price = lvl.price
+                price = lvl.price
+                # if vol_to_dust_ratio > 1.8:
+                #     if i != 0:
+                #         price = lvl.price + plus_tick
+                #     else:
+                #         price = lvl.price
+                # else:
+                #     price = lvl.price
                 break
         return OrderbookLevel(price=price, amount=vol)
 
@@ -694,6 +695,10 @@ class OrderBook:
                         tick_size: Decimal = Decimal('0.0')
                         ) -> (OrderbookLevel, OrderbookLevel):
 
+        # print("---")
+        # for l in reversed(self.asks[0:20]):
+        #     print(">   ", l.price, l.amount)
+        # print(self.asks[0].price, self._get_price_no_dust(self.asks, ask_dust_amount, -tick_size).price)
         return (
             self.bids[0] if bid_dust_amount <= Decimal("0.0") else self._get_price_no_dust(
                 self.bids, bid_dust_amount, tick_size),

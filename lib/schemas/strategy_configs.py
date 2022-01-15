@@ -151,11 +151,15 @@ class BaseOneAssetConfig(BaseModel):
     process_step_frequency_sec: float = 0.5
 
     symbol: Symbol = SYMBOL_EMPTY
-    order_replace_frequency: Decimal = Decimal("0.0")
+    order_replace_frequency: float = 0.0
     price_change_tolerance: Decimal = Decimal("0.0")
 
     bid_dust_amount: Decimal = Decimal("0.0")
     ask_dust_amount: Decimal = Decimal("0.0")
+    auto_remove_liquidity: bool = False
+
+    balance_base_reserved: Decimal = Decimal("0.0")
+    balance_quote_reserved: Decimal = Decimal("0.0")
 
     order_amount_fraction: Decimal = Decimal("0.25")
     jump_above_best_price: bool = False
@@ -166,6 +170,8 @@ class BaseOneAssetConfig(BaseModel):
     ask_buyout_level_amount: Decimal = Decimal("0.0")
 
     quote_allowed_limit: Decimal = None
+    base_allowed_amount__enabled: bool = False
+    quote_allowed_amount__enabled: bool = True
 
     order_hard_limit_interval: int = 10
     order_hard_limit_count: int = 50
@@ -176,6 +182,7 @@ class BaseOneAssetConfig(BaseModel):
     order_type: OrderType = OrderType.LIMIT_MAKER
 
     cancel_orders_on_start_stop: bool = True
+    cancel_delay_sec: float = None
 
     class Config:
         arbitrary_types_allowed = True
@@ -225,12 +232,22 @@ class PureMarketMakingExternalPriceZMQConfig(PureMarketMakingConfig):
     stream_price_external: List[str]
 
 
+class GridConfig(PureMarketMakingConfig):
+    config_type: Literal['GridConfig'] = 'GridConfig'
+    add_liquidity_when_available: bool = False
+
+    order_amount: Decimal
+    bid_levels_spread: Decimal = None
+    ask_levels_spread: Decimal = None
+
+
 class StatArbKalmanConfig(PureMarketMakingConfig):
     config_type: Literal['StatArbKalmanConfig'] = 'StatArbKalmanConfig'
     stream_kalman: List
     stream_maker: List
     stream_taker: List
     stream_cross: List
+    is_cross_reversed: bool = False
 
 
 class PureMarketMakingSpikeFilterConfig(PureMarketMakingConfig):
@@ -426,6 +443,7 @@ class BotConfigResponse(BaseModel):
     bot_id: int
     debug: bool = False
     strategy_config: Union[
+        GridConfig,
         PureMarketMakingExternalPriceZMQConfig,
         BSwapSellConfig,
         StatArbKalmanConfig,
@@ -448,6 +466,7 @@ class BotConfigResponse(BaseModel):
 STRATEGY_CONFIG_CLASS_MAP = {
     # "OwnLongBotConfig": OwnLongBotConfig,
     # "OwnShortBotConfig": OwnShortBotConfig,
+    "GridConfig": GridConfig,
     "PureMarketMakingExternalPriceZMQConfig": PureMarketMakingExternalPriceZMQConfig,
     "BSwapSellConfig": BSwapSellConfig,
     "StatArbKalmanConfig": StatArbKalmanConfig,

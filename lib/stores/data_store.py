@@ -31,6 +31,7 @@ class DataType(Enum):
     bswap_quote = 'bswap_quote'
     orderbook = 'orderbook'
     kalman_log = 'kalman_log'
+    trades_log = 'trades_log'
 
 
 class DataStore:
@@ -68,6 +69,8 @@ class DataStore:
             return DataType.orderbook
         if {"timestamp", "channel", "art", "brt"} == cols:
             return DataType.kalman_log
+        if ("timestamp", "ts_end", "swap_id") == cols:
+            return DataType.trades_log
         return None
 
     def __send_data(self, data_type: DataType, rows):
@@ -232,6 +235,11 @@ class DataStore:
             return df[(df.index < end) & (df.index >= start)]
         elif data_type == DataType.kalman_log:
             cache_dir = os.path.join(self.cache_path, 'kalman_log_zmq')
+            os.makedirs(cache_dir, exist_ok=True)
+            cache_path = os.path.join(cache_dir, f'{params["channel"]}_{start}_{end}.hdf'.replace('/', '_').lower())
+            return _get_bidask_swap({'channel': params['channel']}, start, end, cache_path)
+        elif data_type == DataType.trades_log:
+            cache_dir = os.path.join(self.cache_path, 'trades_log_zmq')
             os.makedirs(cache_dir, exist_ok=True)
             cache_path = os.path.join(cache_dir, f'{params["channel"]}_{start}_{end}.hdf'.replace('/', '_').lower())
             return _get_bidask_swap({'channel': params['channel']}, start, end, cache_path)

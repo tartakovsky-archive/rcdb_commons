@@ -31,6 +31,7 @@ class Exchange(Enum):
 
 class AccountType(Enum):
     SPOT = 'SPOT'
+    SWAP = 'SWAP'
     CROSS_MARGIN = 'CROSS_MARGIN'
     ISOLATED_MARGIN = 'ISOLATED_MARGIN'
     USDT_M_FUTURES = 'USDT_M_FUTURES'
@@ -48,6 +49,7 @@ class AccountType(Enum):
     def labels(cls) -> dict:
         return {
             cls.SPOT: 'Spot',
+            cls.SWAP: 'Swap',
             cls.CROSS_MARGIN: 'Cross Margin',
             cls.ISOLATED_MARGIN: 'Isolated Margin',
             cls.USDT_M_FUTURES: 'USDT-M Futures',

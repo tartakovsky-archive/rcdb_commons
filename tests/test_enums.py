@@ -10,6 +10,7 @@ from lib.schemas.exchange import AccountType
             True,
             [
                 ('SPOT', 'Spot'),
+                ('SWAP', 'Swap'),
                 ('CROSS_MARGIN', 'Cross Margin'),
                 ('ISOLATED_MARGIN', 'Isolated Margin'),
                 ('USDT_M_FUTURES', 'USDT-M Futures'),
@@ -23,6 +24,7 @@ from lib.schemas.exchange import AccountType
             False,
             [
                 (AccountType.SPOT, 'Spot'),
+                (AccountType.SWAP, 'Swap'),
                 (AccountType.CROSS_MARGIN, 'Cross Margin'),
                 (AccountType.ISOLATED_MARGIN, 'Isolated Margin'),
                 (AccountType.USDT_M_FUTURES, 'USDT-M Futures'),
@@ -41,6 +43,7 @@ def test_AccountType_choices(use_value, test_choices):
     'account_type, test_label',
     [
         (AccountType.SPOT, 'Spot'),
+        (AccountType.SWAP, 'Swap'),
         (AccountType.CROSS_MARGIN, 'Cross Margin'),
         (AccountType.ISOLATED_MARGIN, 'Isolated Margin'),
         (AccountType.USDT_M_FUTURES, 'USDT-M Futures'),

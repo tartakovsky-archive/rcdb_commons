@@ -210,7 +210,7 @@ class PureMarketMakingConfig(BaseOneAssetConfig):
 
     minimum_spread: Decimal = Decimal("0.0")
 
-    order_amount_max: Decimal = Decimal("0.0")
+    order_amount_max: Decimal = None
     order_amount_divider = Decimal("10.0")
     order_amount_min: Decimal = Decimal("0.0")
 

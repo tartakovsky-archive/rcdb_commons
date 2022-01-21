@@ -28,13 +28,17 @@ class Exchange(Enum):
     
     huobi = "huobi"
 
+
 class AccountType(Enum):
     SPOT = 'SPOT'
-    SWAP = "SWAP"
     CROSS_MARGIN = 'CROSS_MARGIN'
     ISOLATED_MARGIN = 'ISOLATED_MARGIN'
     USDT_M_FUTURES = 'USDT_M_FUTURES'
     COIN_M_FUTURES = 'COIN_M_FUTURES'
+
+    # bybit specials
+    INVERSE_PERPETUAL = 'INVERSE_PERPETUAL'
+    INVERSE_FUTURES = 'INVERSE_FUTURES'
 
     @property
     def label(self) -> str:
@@ -47,7 +51,9 @@ class AccountType(Enum):
             cls.CROSS_MARGIN: 'Cross Margin',
             cls.ISOLATED_MARGIN: 'Isolated Margin',
             cls.USDT_M_FUTURES: 'USDT-M Futures',
-            cls.COIN_M_FUTURES: 'COIN-M Futures'
+            cls.COIN_M_FUTURES: 'COIN-M Futures',
+            cls.INVERSE_FUTURES: 'Inverse Futures',
+            cls.INVERSE_PERPETUAL: 'Inverse Perpetual'
         }
 
     @classmethod
@@ -67,7 +73,12 @@ class AccountType(Enum):
 
     @property
     def is_futures(self):
-        return self in {AccountType.COIN_M_FUTURES, AccountType.USDT_M_FUTURES}
+        return self in {
+            AccountType.COIN_M_FUTURES,
+            AccountType.USDT_M_FUTURES,
+            AccountType.INVERSE_PERPETUAL,
+            AccountType.INVERSE_FUTURES,
+        }
 
 
 class ExchangeCredentials(BaseModel):

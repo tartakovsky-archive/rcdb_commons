@@ -69,7 +69,7 @@ class DataStore:
             return DataType.orderbook
         if {"timestamp", "channel", "art", "brt"} == cols:
             return DataType.kalman_log
-        if ("timestamp", "ts_end", "swap_id") == cols:
+        if ("timestamp", "channel", "ts_end", "swap_id") == cols:
             return DataType.trades_log
         return None
 

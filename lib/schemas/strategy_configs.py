@@ -161,9 +161,6 @@ class BaseOneAssetConfig(BaseModel):
     balance_base_reserved: Decimal = Decimal("0.0")
     balance_quote_reserved: Decimal = Decimal("0.0")
 
-    balance_base_reserved: Decimal = Decimal("0.0")
-    balance_quote_reserved: Decimal = Decimal("0.0")
-
     order_amount_fraction: Decimal = Decimal("0.25")
     jump_above_best_price: bool = False
     spread_force_tighten: bool = False
@@ -186,6 +183,8 @@ class BaseOneAssetConfig(BaseModel):
 
     cancel_orders_on_start_stop: bool = True
     cancel_delay_sec: float = None
+
+    pre_order_delay: float = 0.0
 
     class Config:
         arbitrary_types_allowed = True
@@ -210,7 +209,7 @@ class PureMarketMakingConfig(BaseOneAssetConfig):
 
     minimum_spread: Decimal = Decimal("0.0")
 
-    order_amount_max: Decimal = None
+    order_amount_max: Decimal = Decimal("Inf")
     order_amount_divider = Decimal("10.0")
     order_amount_min: Decimal = Decimal("0.0")
 

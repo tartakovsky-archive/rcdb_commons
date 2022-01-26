@@ -22,10 +22,7 @@ class Exchange(Enum):
     kraken = "kraken"
     okex = "okex"
     kucoin = "kucoin"
-
-    bybit_spot = "bybit_spot"
-    bybit_futures = "bybit_futures"
-
+    bybit = "bybit"
     huobi = "huobi"
 
 

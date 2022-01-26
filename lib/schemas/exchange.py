@@ -25,7 +25,7 @@ class Exchange(Enum):
 
     bybit_spot = "bybit_spot"
     bybit_futures = "bybit_futures"
-    
+
     huobi = "huobi"
 
 
@@ -320,7 +320,7 @@ class AssetSpotBalance:
 
         assert free >= Decimal("0.0")
         assert locked >= Decimal("0.0")
-   
+
     def __repr__(self):
         return f'<{type(self).__name__}(name={self.name}, free={self.free}, locked={self.locked}, total={self.total})>'
 

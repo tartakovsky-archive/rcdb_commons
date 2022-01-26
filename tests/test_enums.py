@@ -16,7 +16,6 @@ from lib.schemas.exchange import AccountType
                 ('USDT_M_FUTURES', 'USDT-M Futures'),
                 ('COIN_M_FUTURES', 'COIN-M Futures'),
                 ('INVERSE_FUTURES', 'Inverse Futures'),
-                ('USDT_PERPETUAL', 'USDT Perpetual'),
                 ('INVERSE_PERPETUAL', 'Inverse Perpetual')
             ]
         ),

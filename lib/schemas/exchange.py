@@ -5,8 +5,8 @@ from enum import Enum
 from pydantic import BaseModel
 from pydantic.typing import List, Dict, Union, Literal
 
-from rcdb_commons.lib.misc.rounding import to_precision, Rounder, to_auto_price_precision
-from rcdb_commons.lib.misc.types import to_decimal
+from ..misc.rounding import to_precision, Rounder, to_auto_price_precision
+from ..misc.types import to_decimal
 
 
 class Exchange(Enum):

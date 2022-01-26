@@ -6,7 +6,8 @@ import pytest
 from onepasswordconnectsdk.models import Vault, SummaryItem, Item
 
 from lib.stores import CredentialsStore
-from lib.schemas.strategy_configs import ExchangeCredentialsEmpty, ExchangeCredentials, Exchange, AccountType
+from lib.schemas.strategy_configs import ExchangeCredentialsEmpty, ExchangeCredentials
+from lib.schemas.exchange import Exchange, AccountType
 
 HOST = 'host'
 TOKEN = 'token'

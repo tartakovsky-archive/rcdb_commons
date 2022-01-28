@@ -186,6 +186,10 @@ class BaseOneAssetConfig(BaseModel):
 
     pre_order_delay: float = 0.0
 
+    order_amount_max: Decimal = Decimal("Inf")
+    order_amount_divider = Decimal("10.0")
+    order_amount_min: Decimal = Decimal("0.0")
+
     class Config:
         arbitrary_types_allowed = True
 
@@ -208,10 +212,6 @@ class PureMarketMakingConfig(BaseOneAssetConfig):
     ask_spread: Decimal = Decimal("0.0")
 
     minimum_spread: Decimal = Decimal("0.0")
-
-    order_amount_max: Decimal = Decimal("Inf")
-    order_amount_divider = Decimal("10.0")
-    order_amount_min: Decimal = Decimal("0.0")
 
     order_amount_fraction: Decimal
     add_liquidity_when_available: bool = True

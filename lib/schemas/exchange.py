@@ -201,6 +201,9 @@ class Instrument:
         self.order_notional_min: Decimal = self.__to_type__(order_notional_min, Decimal, nullable=True)
         self.order_notional_max: Decimal = self.__to_type__(order_notional_max, Decimal, nullable=True)
 
+    def __repr__(self):
+        return f'<Instrument {self.__dict__}>'
+
     @staticmethod
     def __to_type__(v, t, nullable=False):
         if not nullable and v is None:
@@ -211,6 +214,7 @@ class Instrument:
 
         return t(v) if v is not None else None
 
+    @property
     def __dict__(self):
         return [self.exchange.value, self.type.value, self.symbol.to_ccxt()]
 
@@ -321,8 +325,16 @@ class AssetSpotBalance:
         assert locked >= Decimal("0.0")
 
     def __repr__(self):
-        return f'<{type(self).__name__}(name={self.name}, free={self.free}, locked={self.locked}, total={self.total})>'
+        return f'<{type(self).__name__} {self.__dict__}>'
 
+    @property
+    def __dict__(self):
+        return {
+            'name': self.name,
+            'free': str(self.free),
+            'locked': str(self.locked),
+            'total': str(self.total),
+        }
 
 # class CapitalBalance(BaseModel):
 #     base: condecimal(ge=Decimal("0.0"))
@@ -347,6 +359,18 @@ class AssetMarginBalance(AssetSpotBalance):
         self.interest: Decimal = interest
         self.net: Decimal = net
 
+    def __repr__(self):
+        return f'<AssetMarginBalance {self.__dict__}>'
+
+    @property
+    def __dict__(self):
+        return {
+            **super().__dict__,
+            'borrowed': str(self.borrowed),
+            'interest': str(self.interest),
+            'net': str(self.net)
+        }
+
 
 class AssetFuturesBalance(AssetSpotBalance):
     pass
@@ -367,7 +391,7 @@ class PositionSide(Enum):
     SHORT = "SHORT"
 
 
-class Position(BaseModel):
+class Position:
     # symbol = pos['symbol'],
     # amount = pos['positionAmt'],
     # price_entry = pos['entryPrice'],
@@ -394,6 +418,33 @@ class Position(BaseModel):
     has_pending_events: bool = False
     wait_update_since: float = None
 
+    def __init__(
+        self,
+        symbol: SymbolFutures,
+        unrealized_profit: Decimal = None,
+        price_entry: Decimal = None,
+        position_side: PositionSide = None,
+        amount: Decimal = Decimal("0.0"),
+        isolated: bool = False,
+        timestamp: float = None,
+        timestamp_local: float = None,
+        has_pending_events: bool = False,
+        wait_update_since: float = None
+    ):
+        self.symbol = symbol
+        self.unrealized_profit = unrealized_profit
+        self.price_entry = price_entry
+        self.position_side = position_side
+        self.amount = amount
+        self.isolated = isolated
+        self.timestamp = timestamp
+        self.timestamp_local = timestamp_local
+        self.has_pending_events = has_pending_events
+        self.wait_update_since = wait_update_since
+
+    def __repr__(self):
+        return f'<Position {self.__dict__}>'
+
     @property
     def base(self):
         zero = Decimal("0.0")
@@ -410,6 +461,27 @@ class Position(BaseModel):
     def refresh_required(self):
         self.has_pending_events = True
         self.wait_update_since = time.time() * 1000
+    
+    @property
+    def __dict__(self):
+
+        def str_or_None(val):
+            if val is None:
+                return val
+            return str(val)
+
+        return {
+            'symbol': self.symbol.to_ccxt(),
+            'unrealized_profit': str_or_None(self.unrealized_profit),
+            'price_entry': str_or_None(self.price_entry),
+            'position_side': self.position_side,
+            'amount': str_or_None(self.amount),
+            'isolated': self.isolated,
+            'timestamp': str_or_None(self.timestamp),
+            'timestamp_local': str_or_None(self.timestamp_local),
+            'has_pending_events': self.has_pending_events,
+            'wait_update_since': str_or_None(self.wait_update_since)
+        }
 
     # class Config:
     #     allow_population_by_alias = True
@@ -428,9 +500,16 @@ class Position(BaseModel):
     #     }
 
 
-class Positions(BaseModel):
+class Positions:
     positions: Dict[str, Position]
     collateral: Decimal = None
+
+    def __init__(self, positions=None, collateral: Decimal = None):
+        self.positions = positions or {}
+        self.collateral = collateral
+
+    def __repr__(self):
+        return f'<Positions {self.__dict__}>'
 
     @property
     def margin_balance(self):
@@ -474,6 +553,13 @@ class Positions(BaseModel):
     def __contains__(self, item):
         return item in self.positions
 
+    @property
+    def __dict__(self):
+        return {
+            'collateral': str(self.collateral),
+            'positions': {k: v.__dict__ for k, v in self.positions.items()}
+        }
+
 
 AssetBalance = Union[AssetMarginBalance, AssetSpotBalance, AssetFuturesBalance]
 
@@ -485,6 +571,9 @@ class AccountBalance:
     def __init__(self, type: AccountType, balances: Dict[str, AssetBalance]):
         self.type = type
         self.balances = balances
+
+    def __repr__(self):
+        return f'<AccountBalance {self.__dict__}>'
 
     def __getitem__(self, key):
         if key.find("/") >= 0:
@@ -517,9 +606,22 @@ class AccountBalance:
         for item in self.balances.items():
             yield item
 
+    @property
+    def __dict__(self):
+        return {
+            'type': self.type.value,
+            'balances': {k: v.__dict__ for k, v in self.balances.items()}
+        }
 
 class AccountMarginBalance(AccountBalance):
     margin_level: Decimal = Decimal("999.0")
+
+    @property
+    def __dict__(self):
+        return {
+            **super().__dict__,
+            'margin_level': str(self.margin_level),
+        }
 
 
 # class OrderbookSpread(BaseModel):
@@ -589,6 +691,9 @@ class Order:
         self.amount_filled: Decimal = to_decimal(amount_filled)
         self.amount_filled_latest: Decimal = to_decimal(amount_filled_latest)
 
+    def __repr__(self):
+        return f'<Order {self.__dict__}>'
+
     def get_filled_pct(self) -> Decimal:
         return self.amount_filled_latest / self.amount_filled
 
@@ -614,19 +719,20 @@ class Order:
             return self.id_client
         return self.id_exchange
 
-    def dict(self):
+    @property
+    def __dict__(self):
         return dict(
             id_client=self.id_client,
             id_exchange=self.id_exchange,
             timestamp=self.timestamp,
-            instrument=self.instrument,
+            instrument=self.instrument.__dict__,
             type=self.type,
             status=self.status,
             side=self.side,
-            price=self.price,
-            amount=self.amount,
-            amount_filled=self.amount_filled,
-            amount_filled_latest=self.amount_filled_latest
+            price=str(self.price),
+            amount=str(self.amount),
+            amount_filled=str(self.amount_filled),
+            amount_filled_latest=str(self.amount_filled_latest)
         )
 
 

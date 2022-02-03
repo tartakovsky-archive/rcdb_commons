@@ -461,7 +461,7 @@ class Position:
     def refresh_required(self):
         self.has_pending_events = True
         self.wait_update_since = time.time() * 1000
-    
+
     @property
     def __dict__(self):
 
@@ -612,6 +612,7 @@ class AccountBalance:
             'type': self.type.value,
             'balances': {k: v.__dict__ for k, v in self.balances.items()}
         }
+
 
 class AccountMarginBalance(AccountBalance):
     margin_level: Decimal = Decimal("999.0")

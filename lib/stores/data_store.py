@@ -41,7 +41,7 @@ class DataStore:
         self.api_url = api_url
         self.session = requests.Session()
         self.session.mount('http://', HTTPAdapter(max_retries=retries))
-        self.session.headers.update({'Authorization': f'Bearer {token}'})
+        self.session.headers.update({'Authorization': f'Bearer {token}', 'Accept-Encoding': 'gzip'})
         self.cache_path = cache_path
 
     @staticmethod
@@ -248,5 +248,27 @@ class DataStore:
             os.makedirs(cache_dir, exist_ok=True)
             cache_path = os.path.join(cache_dir, f'{params["channel"]}_{start}_{end}.hdf'.replace('/', '_').lower())
             return _get_bidask_swap({'channel': params['channel']}, start, end, cache_path)
+        elif data_type == DataType.balance:
+            cache_dir = os.path.join(self.cache_path, 'balances')
+            os.makedirs(cache_dir, exist_ok=True)
+            cache_path = os.path.join(
+                cache_dir,
+                f'{params.get("name", "")}_{params.get("account_type", "")}_{start}_{end}.hdf'.replace('/', '_').lower()
+            )
+            p = {}
+            if 'name' in params:
+                p['name'] = params['name']
+            if 'account_type' in params:
+                p['account_type'] = params['account_type']
+            df = _get_bidask_swap(p, start, end, cache_path)
+            if len(df):
+                df = (
+                    df
+                    .groupby(['timestamp', 'name', 'account_type'])
+                    .agg({'amount_usd': 'sum', 'borrowed_usd': 'sum', 'interest_usd': 'sum'})
+                )
+                df.reset_index(inplace=True)
+                df.set_index('timestamp', inplace=True)
+            return df
         else:
             raise ValueError(f'Unsupported type {data_type}')

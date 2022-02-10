@@ -251,6 +251,11 @@ class DataStore:
             os.makedirs(cache_dir, exist_ok=True)
             cache_path = os.path.join(cache_dir, f'{params["channel"]}_{start}_{end}.hdf'.replace('/', '_').lower())
             return _get_bidask_swap({'channel': params['channel']}, start, end, cache_path)
+        elif data_type == DataType.tickers:
+            cache_dir = os.path.join(self.cache_path, 'tickers')
+            os.makedirs(cache_dir, exist_ok=True)
+            cache_path = os.path.join(cache_dir, f'{params["channel"]}_{start}_{end}.hdf'.replace('/', '_').lower())
+            return _get_bidask_swap({'channel': params['channel']}, start, end, cache_path)
         elif data_type == DataType.balance:
             cache_dir = os.path.join(self.cache_path, 'balances')
             os.makedirs(cache_dir, exist_ok=True)

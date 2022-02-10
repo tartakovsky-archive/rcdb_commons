@@ -32,6 +32,7 @@ class DataType(Enum):
     orderbook = 'orderbook'
     kalman_log = 'kalman_log'
     trades_log = 'trades_log'
+    tickers = 'tickers'
 
 
 class DataStore:
@@ -71,6 +72,8 @@ class DataStore:
             return DataType.kalman_log
         if {"timestamp", "channel", "ts_end", "swap_id"} == cols:
             return DataType.trades_log
+        if {"timestamp", "channel", "p", "q", "bm"} == cols:
+            return DataType.tickers
         return None
 
     def __send_data(self, data_type: DataType, rows):

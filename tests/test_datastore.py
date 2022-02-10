@@ -41,6 +41,7 @@ def test_init():
         (pd.DataFrame([{"timestamp": 1, "channel": 1, "ts_l": 1, "b": 1, "a": 1, "b_a": 1, "a_a": 1}]),
          DataType.orderbook),
         (pd.DataFrame([{"timestamp": 1, "channel": 1, "art": 1, "brt": 1}]), DataType.kalman_log),
+        (pd.DataFrame([{"timestamp": 1, "channel": 1, "p": 1, "q": 1, "bm": 1}]), DataType.tickers),
         (pd.DataFrame([{'some': 1}]), None),
     ]
 )

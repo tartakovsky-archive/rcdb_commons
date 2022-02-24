@@ -34,3 +34,4 @@ class Rounder:
     def to_precision(value: Decimal, precision: int, rounding) -> Decimal:
         v = value.quantize(Decimal("1." + "0" * precision), rounding=rounding)
         return v
+

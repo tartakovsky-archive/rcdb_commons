@@ -184,7 +184,7 @@ class BaseOneAssetConfig(BaseModel):
     cancel_orders_on_start_stop: bool = True
     cancel_delay_sec: float = None
 
-    pre_order_delay: float = 0.0
+    pre_order_delay: List = None
 
     order_amount_max: Decimal = Decimal("Inf")
     order_amount_divider = Decimal("10.0")
@@ -214,7 +214,7 @@ class PureMarketMakingConfig(BaseOneAssetConfig):
     minimum_spread: Decimal = Decimal("0.0")
 
     order_amount_fraction: Decimal
-    add_liquidity_when_available: bool = True
+    add_liquidity_when_available: bool = False
     replace_on_insufficient_funds: bool = False
     ensure_limit_price: bool = True
 
@@ -248,7 +248,7 @@ class StatArbKalmanConfig(PureMarketMakingConfig):
     stream_kalman: List
     stream_maker: List
     stream_taker: List
-    stream_cross: List
+    stream_cross: List = None
     is_cross_reversed: bool = False
 
 

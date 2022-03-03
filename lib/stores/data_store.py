@@ -273,7 +273,7 @@ class DataStore:
                 df = (
                     df
                     .groupby(['timestamp', 'name', 'account_type'])
-                    .agg({'amount_usd': 'sum', 'borrowed_usd': 'sum', 'interest_usd': 'sum'})
+                    .agg({'amount_usd': 'sum', 'borrowed_usd': 'sum', 'interest_usd': 'sum', 'free_usd': 'sum'})
                 )
                 df.reset_index(inplace=True)
                 df.set_index('timestamp', inplace=True)

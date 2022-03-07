@@ -33,6 +33,7 @@ class DataType(Enum):
     kalman_log = 'kalman_log'
     trades_log = 'trades_log'
     tickers = 'tickers'
+    unclaimed_bnb = 'unclaimed_bnb'
 
 
 class DataStore:
@@ -74,6 +75,8 @@ class DataStore:
             return DataType.trades_log
         if {"timestamp", "channel", "p", "q", "bm"} == cols:
             return DataType.tickers
+        if {"timestamp", "unclaimed", "name"} == cols:
+            return DataType.unclaimed_bnb
         return None
 
     def __send_data(self, data_type: DataType, rows):
@@ -278,5 +281,16 @@ class DataStore:
                 df.reset_index(inplace=True)
                 df.set_index('timestamp', inplace=True)
             return df
+        elif data_type == DataType.unclaimed_bnb:
+            cache_dir = os.path.join(self.cache_path, 'unclaimed_bnb')
+            p = {}
+            if 'name' in params:
+                p['name'] = params['name']
+
+            cache_path = os.path.join(
+                cache_dir,
+                f'{params.get("name", "all")}_{start}_{end}.hdf'.replace('/', '_').lower()
+            )
+            return _get_bidask_swap(p, start, end, cache_path)
         else:
             raise ValueError(f'Unsupported type {data_type}')

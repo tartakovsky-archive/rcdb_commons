@@ -42,6 +42,7 @@ def test_init():
          DataType.orderbook),
         (pd.DataFrame([{"timestamp": 1, "channel": 1, "art": 1, "brt": 1}]), DataType.kalman_log),
         (pd.DataFrame([{"timestamp": 1, "channel": 1, "p": 1, "q": 1, "bm": 1}]), DataType.tickers),
+        (pd.DataFrame([{"timestamp": 1, "name": 1, "unclaimed": 1}]), DataType.unclaimed_bnb),
         (pd.DataFrame([{'some': 1}]), None),
     ]
 )

@@ -283,6 +283,7 @@ class DataStore:
             return df
         elif data_type == DataType.unclaimed_bnb:
             cache_dir = os.path.join(self.cache_path, 'unclaimed_bnb')
+            os.makedirs(cache_dir, exist_ok=True)
             p = {}
             if 'name' in params:
                 p['name'] = params['name']

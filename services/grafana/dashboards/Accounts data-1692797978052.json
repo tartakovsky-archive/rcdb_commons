@@ -1,0 +1,303 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_POSTGRESQL",
+      "label": "PostgreSQL",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "postgres",
+      "pluginName": "PostgreSQL"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "9.4.7"
+    },
+    {
+      "type": "datasource",
+      "id": "postgres",
+      "name": "PostgreSQL",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "timezone": [
+          "utc"
+        ],
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH hourly_snapshots AS (\n  SELECT \n    timestamp, account_name, asset, LAST(total_usd) as total_usd\n  FROM spot_balances\n  WHERE timestamp >= DATEADD('d', -1, DATE_TRUNC('hour', NOW())) AND timestamp < DATE_TRUNC('hour', NOW())  -- get bigger range to ensure that it has all assets\n  SAMPLE BY 1m FILL(PREV)\n  ALIGN TO CALENDAR TIME ZONE 'UTC'\n  GROUP BY timestamp, account_name, asset\n)\nSELECT \n  hourly_snapshots.timestamp, SUM(hourly_snapshots.total_usd) as spot_balance\nFROM hourly_snapshots\nGROUP BY timestamp",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Total USD balance",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "links": [],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "account_name"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "",
+                    "url": "http://qdb:3000/d/_Yr8zoE4k/account-assets?orgId=1&var-account_name=${__value.text}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 27,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 2,
+      "options": {
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "9.4.7",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH sampled_asset_balance AS (\n  SELECT\n    account_name,\n    asset,\n    LAST(total_usd) as total_usd,\n    timestamp as latest_update\n  FROM spot_balances\n  WHERE timestamp >= DATEADD('m', -5, DATE_TRUNC('minute', NOW())) AND timestamp < DATE_TRUNC('minute', NOW())\n  SAMPLE BY 30s FILL(PREV)\n  GROUP BY timestamp, account_name, asset\n)\n,\nsampled_spot_balance AS (SELECT\n    account_name,\n    SUM(total_usd) as total_usd,\n    latest_update\n  FROM sampled_asset_balance\n  GROUP BY account_name, latest_update\n  \n  UNION\n  \n  SELECT\n    account_name,\n    SUM(total_usd) as total_usd,\n    MAX(timestamp) as latest_update\n  FROM spot_balances\n  WHERE account_name NOT IN (SELECT account_name FROM sampled_asset_balance)\n  LATEST ON timestamp PARTITION BY account_name, asset\n  GROUP BY account_name\n)\n,\nbalance AS (Select \n    account_name, \n    MAX(total_usd) as total_usd,\n    MAX(latest_update) as latest_update\n  from sampled_spot_balance\n  GROUP BY account_name\n),\nvolumes_week AS (\n    SELECT\n     account_name,\n     SUM(volume_usd) as volume_usd,\n     MAX(timestamp) as latest_update\n  FROM et_trades\n  WHERE account_type = 'spot' AND timestamp >= DATE_TRUNC('week', now()) AND timestamp < now()\n  GROUP BY account_name\n),\nvolumes_24h AS (\n    SELECT\n     account_name,\n     SUM(volume_usd) as volume_usd\n  FROM et_trades\n  WHERE account_type = 'spot' AND timestamp >= dateadd('h', -24, now()) AND timestamp < now()\n  GROUP BY account_name\n),\nvolumes_1h AS (\n    SELECT\n     account_name,\n     SUM(volume_usd) as volume_usd\n  FROM et_trades\n  WHERE account_type = 'spot' AND timestamp >= dateadd('h', -1, now()) AND timestamp < now()\n  GROUP BY account_name\n)\nSELECT\n    balance.account_name,\n    SUM(balance.total_usd) as total_usd,\n    volumes_1h.volume_usd as volume_1h,\n    volumes_24h.volume_usd as volume_24h,\n    volumes_week.volume_usd as volume_week,\n    balance.latest_update as latest_balance_update,\n    volumes_week.latest_update as latest_volume_update\nFROM balance\nLEFT JOIN volumes_week ON balance.account_name = volumes_week.account_name\nLEFT JOIN volumes_24h ON balance.account_name = volumes_24h.account_name\nLEFT JOIN volumes_1h ON balance.account_name = volumes_1h.account_name\nORDER BY account_name;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Spot balances",
+      "type": "table"
+    }
+  ],
+  "refresh": "10s",
+  "revision": 1,
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Accounts data",
+  "uid": "BrMqgTEVk",
+  "version": 1,
+  "weekStart": ""
+}

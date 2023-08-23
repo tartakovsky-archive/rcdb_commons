@@ -1,0 +1,10 @@
+[Unit]
+Description=
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/ubuntu/node_exporter-1.6.0.linux-amd64/node_exporter
+
+[Install]
+WantedBy=multi-user.target

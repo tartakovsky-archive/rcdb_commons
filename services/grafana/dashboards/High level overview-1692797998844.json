@@ -1,0 +1,163 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_POSTGRESQL",
+      "label": "PostgreSQL",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "postgres",
+      "pluginName": "PostgreSQL"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "9.4.7"
+    },
+    {
+      "type": "datasource",
+      "id": "postgres",
+      "name": "PostgreSQL",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "${DS_POSTGRESQL}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.4.7",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "${DS_POSTGRESQL}"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH sampled_asset_balance AS (\n  SELECT\n    account_name,\n    asset,\n    LAST(total_usd) as total_usd,\n    timestamp as latest_update\n  FROM spot_balances\n  WHERE timestamp >= DATEADD('m', -5, DATE_TRUNC('minute', NOW())) AND timestamp < DATE_TRUNC('minute', NOW())\n  SAMPLE BY 30s FILL(PREV)\n  GROUP BY timestamp, account_name, asset\n)\n,\nsampled_spot_balance AS (SELECT\n    account_name,\n    SUM(total_usd) as total_usd,\n    latest_update\n  FROM sampled_asset_balance\n  GROUP BY account_name, latest_update\n  \n  UNION\n  \n  SELECT\n    account_name,\n    SUM(total_usd) as total_usd,\n    MAX(timestamp) as latest_update\n  FROM spot_balances\n  WHERE account_name NOT IN (SELECT account_name FROM sampled_asset_balance)\n  LATEST ON timestamp PARTITION BY account_name, asset\n  GROUP BY account_name\n)\n,\nspot_balance AS (Select \n    account_name, \n    MAX(total_usd) as total_usd,\n    MAX(latest_update) as latest_update\n  from sampled_spot_balance\n  GROUP BY account_name\n)\n,\nfutures_balance AS (\n  SELECT\n    account_name,\n    SUM(total_usd) as total_usd,\n    MAX(timestamp) as latest_update\n  FROM futures_balances\n  WHERE account_type = 'LINEAR_FUTURES'\n  LATEST ON timestamp PARTITION BY account_name, asset\n  GROUP BY account_name\n),\nactual_positions AS (\n  SELECT instrument, account_type, account_name, position_side, amount, price_entry, price_row, unrealized_profit, timestamp\n  FROM positions\n  LATEST ON timestamp PARTITION BY account_name, instrument\n),\nlast_prices AS (\n  SELECT account_type, instrument, (bid + ask)/2 as price, timestamp\n  FROM price_tickers\n  WHERE account_type = 'LINEAR_FUTURES' and timestamp > dateadd('h', -1, now())\n  LATEST ON timestamp PARTITION BY instrument \n),\npnl AS (\n  SELECT sp.account_name, SUM(sp.unrealized_profit / sp.price_row * lp.price) as unrealized_profit_current\n  FROM actual_positions sp \n  LEFT JOIN last_prices lp on sp.instrument = lp.instrument \n  WHERE sp.amount <> 0\n  GROUP BY sp.account_name\n),\nvolumes_week AS (\n    SELECT\n     account_name,\n     SUM(volume_usd) as volume_usd,\n     MAX(timestamp) as latest_update\n  FROM et_trades\n  WHERE account_type = 'spot' AND timestamp >= DATE_TRUNC('week', now()) AND timestamp < now()\n  GROUP BY account_name\n),\nvolumes_24h AS (\n    SELECT\n     account_name,\n     SUM(volume_usd) as volume_usd\n  FROM et_trades\n  WHERE account_type = 'spot' AND timestamp >= dateadd('h', -24, now()) AND timestamp < now()\n  GROUP BY account_name\n),\nvolumes_1h AS (\n    SELECT\n     account_name,\n     SUM(volume_usd) as volume_usd\n  FROM et_trades\n  WHERE account_type = 'spot' AND timestamp >= dateadd('h', -1, now()) AND timestamp < now()\n  GROUP BY account_name\n)\nSELECT\n    SUM(spot_balance.total_usd) + SUM(futures_balance.total_usd) + SUM(pnl.unrealized_profit_current) as total_usd, \n    SUM(volumes_1h.volume_usd) / 1000000 as volume_kk_1h,\n    SUM(volumes_24h.volume_usd) / 1000000 as volume_kk_24h,\n    SUM(volumes_week.volume_usd) / 1000000 as volume_kk_week,\n    MAX(spot_balance.latest_update) as latest_balance_update,\n    MAX(volumes_week.latest_update) as latest_volume_update\nFROM spot_balance\nLEFT JOIN futures_balance ON spot_balance.account_name = futures_balance.account_name\nLEFT JOIN volumes_week ON spot_balance.account_name = volumes_week.account_name\nLEFT JOIN volumes_24h ON spot_balance.account_name = volumes_24h.account_name\nLEFT JOIN volumes_1h ON spot_balance.account_name = volumes_1h.account_name\nLEFT JOIN pnl ON spot_balance.account_name = pnl.account_name\n;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Panel Title",
+      "type": "stat"
+    }
+  ],
+  "refresh": "",
+  "revision": 1,
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "High level overview",
+  "uid": "h76qMbEVz",
+  "version": 1,
+  "weekStart": ""
+}

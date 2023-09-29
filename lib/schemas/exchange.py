@@ -19,6 +19,7 @@ class Exchange(Enum):
     binance_public = "binance_public"
 
     ascendex = "ascendex"
+    coinbase = "coinbase"
     kraken = "kraken"
     okex = "okex"
     kucoin = "kucoin"

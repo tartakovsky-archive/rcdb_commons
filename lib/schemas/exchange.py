@@ -20,6 +20,7 @@ class Exchange(Enum):
 
     ascendex = "ascendex"
     coinbase = "coinbase"
+    commex = "commex"
     kraken = "kraken"
     okex = "okex"
     kucoin = "kucoin"

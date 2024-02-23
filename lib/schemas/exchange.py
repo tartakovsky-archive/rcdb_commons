@@ -26,6 +26,7 @@ class Exchange(Enum):
     kucoin = "kucoin"
     bybit = "bybit"
     huobi = "huobi"
+    whitebit = "whitebit"
 
 
 class AccountType(Enum):

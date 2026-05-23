@@ -1,6 +1,6 @@
 # rcdb_commons
 
-> Shared Python SDK and schema layer for the RCDB multi-exchange automated trading platform.
+> Shared Python SDK and schemas for the RCDB trading platform.
 
 [![Python](https://img.shields.io/badge/Python-3.x-3776AB)](https://www.python.org/)
 [![Pydantic](https://img.shields.io/badge/Pydantic-1.8-E92063)](https://docs.pydantic.dev/)
@@ -9,7 +9,7 @@
 [![Sentry](https://img.shields.io/badge/Sentry-Integrated-362D59)](https://sentry.io/)
 [![Status](https://img.shields.io/badge/Status-Archived-lightgrey)](#lineage)
 
-**Archived** - cloned from `hcmc-project/rcdb_commons` for posterity. Part of the **RCDB** automated trading platform, later merged into [3Jane Technologies](https://github.com/3jane).
+**Archived.** Cloned from `hcmc-project/rcdb_commons`. Part of the **RCDB** trading stack. Later folded into [3Jane](https://github.com/3jane).
 
 ---
 
@@ -26,11 +26,15 @@
 
 ## What this was
 
-`rcdb_commons` was the **shared SDK every other RCDB service linked against**. It defined the Pydantic schemas that crossed every service boundary - research notebooks, the execution engine, the operations dashboard, and the time-series datastore - so that strategy configs, exchange credentials, symbols, and account types had a single canonical representation across the platform.
+This was the **shared SDK every RCDB service linked to**. It held the Pydantic schemas that crossed every service line. Bots, the dashboard, the datastore, and the research repo all spoke through it.
 
-On top of those schemas it shipped **three typed REST clients**: `DataStore` for pushing and pulling time-series rows (OHLCV, Kalman-filtered signals, bot performance, price index, account trades), `ConfigStore` for fetching validated `BotConfigResponse` strategy bundles by `bot_id`, and `CredentialsStore` for resolving exchange API keys out of a self-hosted 1Password Connect vault at runtime.
+On top of the schemas it shipped **three typed REST clients**:
 
-Alongside the library the repo packages the **operational sidecars** that kept the platform running: a Python datapipe ETL that ships per-account trade and balance CSVs into QuestDB via the `questdb.ingress` line protocol, a QuestDB partition backup job that rolls cold data to S3, an orderbook dump shell script that syncs gzipped depth captures to S3, a YAML generator for the Chronicle-Queue stream configs that fanned exchange data into the platform, and Docker Compose stacks for self-hosted Sentry and 1Password Connect plus a Grafana/Prometheus bootstrap with nine pre-built dashboards.
+- `DataStore` - push and pull time-series rows
+- `ConfigStore` - fetch a typed `BotConfigResponse` by `bot_id`
+- `CredentialsStore` - read API keys from a self-hosted 1Password Connect vault
+
+The repo also packs the **ops sidecars** that kept the stack live: a Python ETL into QuestDB, a partition backup to S3, an orderbook dump to S3, a YAML maker for Chronicle Queue stream configs, plus Docker stacks for Sentry, 1Password Connect, Grafana, and Prometheus.
 
 ## Tech stack
 
@@ -64,17 +68,21 @@ Alongside the library the repo packages the **operational sidecars** that kept t
 
 ## Schema highlights
 
-The schema layer is what made the rest of the platform safe to refactor. Everything below is `pydantic.BaseModel`, lives in `lib/schemas/`, and is shared verbatim by the datastore, dashboard, research, and execution sides.
+All schemas are `pydantic.BaseModel` in `lib/schemas/`. They are shared as-is by the datastore, dashboard, research, and bots.
 
-- `ExchangeCredentials` (`lib/schemas/exchange.py`) - `{exchange: Exchange, credentials: dict | str, type: AccountType}`. The `str` form is a 1Password vault item title that `CredentialsStore` resolves at runtime; `is_filled()` distinguishes the two states. `ExchangeCredentialsEmpty` is a `Literal['EMPTY']` sentinel used as a default in configs.
-- `AccountType` (`lib/schemas/exchange.py`) - `MAIN`, `SPOT`, `SWAP`, `CROSS_MARGIN`, `ISOLATED_MARGIN`, `USDT_M_FUTURES`, `COIN_M_FUTURES`, plus Bybit-specific `INVERSE_PERPETUAL` and `INVERSE_FUTURES`. Carries `is_spot`, `is_margin`, `is_futures` predicates and Django-style `choices()`.
-- `Exchange` enum covers Binance (spot, USDM, COINM, swap, public), Ascendex, Coinbase, Commex, Kraken, OKEx, KuCoin, Bybit, Huobi, WhiteBIT.
-- `Symbol` and `SymbolFutures` - canonical pair representation with `from_ccxt` / `from_binance` parsers and `to_ccxt` / `to_binance` / `to_kucoin` serializers; `SYMBOL_EMPTY` is the sentinel default.
-- `BotConfigResponse` (`lib/schemas/strategy_configs.py`) - the wire shape returned by the config API. The `strategy_config` field is a `Union[...]` discriminated on `config_type` covering the full strategy zoo (`GridConfig`, `PureMarketMakingConfig`, `PureMarketMakingFuturesConfig`, `StatArbKalmanConfig`, `CrossExchangeMarketMakingFuturesConfig`, `SpotToFuturesHedgingConfig`, `FuturesToFuturesHedgingConfig`, `PureMarketMakingSpikeFilterConfig`, `TrendFollowingMakingFuturesConfig`, `OrderBookCollectorSpotConfig`, `OrderBookCollectorFuturesConfig`, `PureMarketMakingExternalPriceConfig`, `PureMarketMakingExternalPriceZMQConfig`, `PureMarketMakingExternalCrossPriceConfig`, `PureMarketMakingFuturesExternalPriceConfig`, `BSwapSellConfig`).
-- `BorrowingConfig` - cross-margin borrow/repay levels for base and quote with `margin_level_max` ceiling.
-- `OrderGridConfig` / `LongOrderGridConfig` / `ShortOrderGridConfig` - entry/exit grid parameters convertible to `BidAskLevelsConfig` depending on side.
-- `Order`, `OrderBook`, `Position`, `Positions`, `AccountBalance`, `AccountMarginBalance` - execution-side primitives with `Decimal` everywhere and helpers like `OrderBook.bid_ask_no_dust()` that skip dust levels when picking the effective top of book.
-- `AdminConfigInput` - the inverse shape used by the dashboard's admin form, with `root_validator`s that enforce `config_type` matches `type(data).__name__` and synthesize defaults when `data` is omitted.
+| Model | Notes |
+|---|---|
+| `ExchangeCredentials` | `{exchange, credentials, type}`. `credentials` is a dict, or a vault item title that `CredentialsStore` resolves |
+| `ExchangeCredentialsEmpty` | `Literal['EMPTY']` sentinel for defaults |
+| `AccountType` | `MAIN`, `SPOT`, `SWAP`, `CROSS_MARGIN`, `ISOLATED_MARGIN`, `USDT_M_FUTURES`, `COIN_M_FUTURES`, Bybit `INVERSE_*` |
+| `Exchange` | Binance (spot, USDM, COINM, swap), Ascendex, Coinbase, Commex, Kraken, OKEx, KuCoin, Bybit, Huobi, WhiteBIT |
+| `Symbol`, `SymbolFutures` | Pair shape with `from_ccxt` / `from_binance` parsers and `to_*` writers |
+| `BotConfigResponse` | Wire shape from the config API. `strategy_config` is a `Union` keyed on `config_type` |
+| Strategy configs | `GridConfig`, `PureMarketMakingConfig` (and futures, spike-filter, external-price, ZMQ, cross-price, futures-external variants), `StatArbKalmanConfig`, `CrossExchangeMarketMakingFuturesConfig`, `SpotToFuturesHedgingConfig`, `FuturesToFuturesHedgingConfig`, `TrendFollowingMakingFuturesConfig`, `OrderBookCollectorSpotConfig`, `OrderBookCollectorFuturesConfig`, `BSwapSellConfig` |
+| `BorrowingConfig` | Cross-margin borrow and repay levels with a `margin_level_max` cap |
+| `OrderGridConfig`, `LongOrderGridConfig`, `ShortOrderGridConfig` | Entry and exit grid params. Convert to `BidAskLevelsConfig` by side |
+| `Order`, `OrderBook`, `Position`, `Positions`, `AccountBalance`, `AccountMarginBalance` | Wire types with `Decimal` math. `OrderBook.bid_ask_no_dust()` skips dust |
+| `AdminConfigInput` | Dashboard admin form shape. `root_validator`s tie `config_type` to `type(data).__name__` |
 
 ## Operational tooling
 
@@ -88,7 +96,7 @@ The schema layer is what made the rest of the platform safe to refactor. Everyth
 
 ## Architecture role
 
-`rcdb_commons` sat in the middle of the platform. Every other service depended on it for schemas and clients; it depended on no other RCDB service at code level - it spoke to them only through injected `api_url` + `token` pairs.
+`rcdb_commons` sat in the middle. Every service used it for schemas and clients. It used no other RCDB code. It spoke to them only by `api_url` and `token`, both passed in.
 
 ```mermaid
 graph LR
@@ -122,7 +130,7 @@ graph LR
     qdb --> grafana
 ```
 
-The pattern throughout is **API URLs and bearer tokens passed in at construction**, not direct cross-service imports. Each service can be deployed and scaled independently; `rcdb_commons` only constrains the wire shape.
+The pattern: **URLs and tokens passed in at build time**, never direct imports. Each service ships on its own. `rcdb_commons` only fixes the wire shape.
 
 ## Lineage
 
